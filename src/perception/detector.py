@@ -21,9 +21,6 @@ from config.config import (
     CONFIDENCE_THRESHOLD,
     IOU_THRESHOLD,
     ROAD_CLASSES,
-    RICKSHAW_ASPECT_MIN,
-    RICKSHAW_ASPECT_MAX,
-    RICKSHAW_MAX_NORM_AREA,
 )
 
 class RoadObjectDetector:
@@ -58,7 +55,7 @@ class RoadObjectDetector:
             return items
 
         pedestrians = [item for item in items if item["class_name"] == "pedestrian"]
-        vehicles = [item for item in items if item["class_name"] in ("motorcycle", "bicycle", "car", "rickshaw", "bus", "truck")]
+        vehicles = [item for item in items if item["class_name"] in ("motorcycle", "bicycle", "car", "bus", "truck")]
 
         if not pedestrians or not vehicles:
             return items
@@ -108,34 +105,15 @@ class RoadObjectDetector:
                                 veh["norm_box"][1] = min(veh["norm_box"][1], ped["norm_box"][1])
                             break
 
-                    # For enclosed vehicles (car, rickshaw, truck, bus):
-                    # If person is detected inside (e.g. driver through windshield/open sides), suppress false pedestrian
-                    elif veh_class in ("car", "rickshaw", "bus", "truck"):
+                    # For enclosed vehicles (car, truck, bus):
+                    # If person is detected inside (e.g. driver through windshield), suppress false pedestrian
+                    elif veh_class in ("car", "bus", "truck"):
                         if overlap_on_ped > 0.40 or iou > 0.30:
                             suppressed_indices.add(ped_idx)
                             break
 
         return [item for i, item in enumerate(items) if i not in suppressed_indices]
 
-    def _reclassify_rickshaws(self, items: list) -> list:
-        """
-        Reclassify COCO-class-2 ("car") detections that match the visual profile of
-        an auto-rickshaw (three-wheeler):
-          - Bounding-box height/width aspect ratio in a "tall-ish, squarish" range
-          - Relatively small normalised area (rickshaws are much smaller than cars/SUVs)
-        This is necessary because YOLO/COCO has no dedicated rickshaw class.
-        """
-        for item in items:
-            if item.get("cls_id") != 2 or item.get("class_name") != "car":
-                continue
-            bw = max(1, item["width"])
-            bh = max(1, item["height"])
-            aspect = bh / bw          # height / width
-            norm_area = item.get("norm_area", 1.0)
-            if (RICKSHAW_ASPECT_MIN <= aspect <= RICKSHAW_ASPECT_MAX
-                    and norm_area <= RICKSHAW_MAX_NORM_AREA):
-                item["class_name"] = "rickshaw"
-        return items
 
     def detect(self, frame: np.ndarray) -> List[Dict[str, Any]]:
         """
@@ -197,9 +175,8 @@ class RoadObjectDetector:
                 "norm_area": (bw * bh) / (width * height),
             })
 
-        # Apply rider disambiguation filter, then rickshaw reclassification
-        detections = self._suppress_rider_pedestrians(detections)
-        return self._reclassify_rickshaws(detections)
+        # Apply rider disambiguation filter
+        return self._suppress_rider_pedestrians(detections)
 
     def track(self, frame: np.ndarray, persist: bool = True) -> List[Dict[str, Any]]:
         """
@@ -264,6 +241,5 @@ class RoadObjectDetector:
                 "norm_area": (bw * bh) / (width * height),
             })
 
-        # Apply rider disambiguation filter, then rickshaw reclassification
-        tracked_objects = self._suppress_rider_pedestrians(tracked_objects)
-        return self._reclassify_rickshaws(tracked_objects)
+        # Apply rider disambiguation filter
+        return self._suppress_rider_pedestrians(tracked_objects)

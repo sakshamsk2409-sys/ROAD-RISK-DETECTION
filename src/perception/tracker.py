@@ -21,7 +21,6 @@ CLASS_NAME_TO_ID = {
     "pedestrian": 0,
     "bicycle": 1,
     "car": 2,
-    "rickshaw": 2,   # Auto-rickshaw shares COCO class 2 (car)
     "motorcycle": 3,
     "bus": 5,
     "truck": 7,
@@ -131,15 +130,15 @@ class TrackState:
         # If object has vehicular closing/receding speed (> 12 km/h), it cannot be an animal
         is_fast_vehicle = abs(self.rel_velocity_mps * 3.6) > 12.0
 
-        veh_votes = sum(self.class_votes[c] for c in ("car", "rickshaw", "motorcycle", "truck", "bus"))
+        veh_votes = sum(self.class_votes[c] for c in ("car", "motorcycle", "truck", "bus"))
         animal_votes = self.class_votes.get("animal", 0.0)
         ped_votes = self.class_votes.get("pedestrian", 0.0)
 
         if is_fast_vehicle and veh_votes > 0.5:
-            return max(["car", "rickshaw", "motorcycle", "truck", "bus"], key=lambda c: self.class_votes[c])
+            return max(["car", "motorcycle", "truck", "bus"], key=lambda c: self.class_votes[c])
 
         if veh_votes >= 1.2 and veh_votes > animal_votes:
-            return max(["car", "rickshaw", "motorcycle", "truck", "bus"], key=lambda c: self.class_votes[c])
+            return max(["car", "motorcycle", "truck", "bus"], key=lambda c: self.class_votes[c])
         elif animal_votes >= 1.0 and animal_votes >= ped_votes:
             return "animal"
         elif ped_votes >= 1.0 and ped_votes > animal_votes:

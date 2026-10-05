@@ -2,35 +2,28 @@
 AI Driving Risk Detection and Driver Assistance System
 Configuration Module
 """
-
 import os
 from pathlib import Path
-
 # Base Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 SAMPLE_VIDEOS_DIR = DATA_DIR / "sample_videos"
 MODELS_DIR = DATA_DIR / "models"
 TRAINING_DATA_DIR = DATA_DIR / "training_data"
-
 # Create directories if they do not exist
 for directory in [SAMPLE_VIDEOS_DIR, MODELS_DIR, TRAINING_DATA_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
-
 # YOLO Object Detection Settings
 YOLO_MODEL_NAME = "yolo11n.pt"  # Latest Ultralytics YOLO11 nano model for fast CPU/GPU inference
 CONFIDENCE_THRESHOLD = 0.35
 IOU_THRESHOLD = 0.45
-
 # Target COCO Classes for Road Perception
 # 0: person, 1: bicycle, 2: car, 3: motorcycle, 5: bus, 7: truck
-# 15: cat, 16: dog, 17: horse, 18: sheep, 19: cow, 20: elephant, 21: bear, 22: zebra, 23: giraffe
-# NOTE: YOLO/COCO has no dedicated auto-rickshaw class. Rickshaws are detected as COCO class 2
-# (car) and reclassified to "rickshaw" via aspect-ratio heuristics in the detector pipeline.
+# 15: cat, 16: dog, 17: horse, 18: sheep, 19: cow
 ROAD_CLASSES = {
     0: "pedestrian",
     1: "bicycle",
-    2: "car",       # Also source class for rickshaw reclassification
+    2: "car",
     3: "motorcycle",
     5: "bus",
     7: "truck",
@@ -41,19 +34,11 @@ ROAD_CLASSES = {
     19: "animal",
 }
 
-# Rickshaw reclassification thresholds (applied to COCO-class-2 / "car" detections)
-# Auto-rickshaws are typically narrower than cars and roughly square in bounding box.
-# They also appear smaller (in area) than a typical passenger car.
-RICKSHAW_ASPECT_MIN = 0.70   # min height/width ratio (tall, narrow profile)
-RICKSHAW_ASPECT_MAX = 1.45   # max height/width ratio
-RICKSHAW_MAX_NORM_AREA = 0.055  # max normalized bbox area (filters out large cars/SUVs)
-
 # Object Physical Dimensions (Typical height in meters for distance prior)
 OBJECT_TYPICAL_HEIGHTS = {
     "pedestrian": 1.70,
     "bicycle": 1.10,
     "car": 1.48,
-    "rickshaw": 1.72,   # Auto-rickshaw canopy height (~1.7–1.8 m)
     "motorcycle": 1.15,
     "bus": 3.20,
     "truck": 3.00,

@@ -15,7 +15,6 @@ if str(PROJECT_ROOT) not in sys.path:
 
 CLASS_CODE_MAP = {
     "car": 0,
-    "rickshaw": 7,   # Auto-rickshaw — distinct from car (0) for ML features
     "motorcycle": 1,
     "bicycle": 2,
     "bus": 3,

@@ -1,1 +1,523 @@
-hi
+﻿================================================================================
+  AI DRIVING RISK DETECTION & DRIVER ASSISTANCE SYSTEM (ADAS)
+  PROJECT CONTEXT -- Full Technical Reference
+================================================================================
+
+LAST UPDATED : 2026-10-05
+REPOSITORY   : https://github.com/sakshamsk2409-sys/ROAD-RISK-DETECTION
+ENTRY POINT  : app.py  (Streamlit web dashboard)
+LANGUAGE     : Python 3.10+
+RUNTIME      : CPU (supports GPU via CUDA if available)
+
+--------------------------------------------------------------------------------
+1. PROJECT PURPOSE & MOTIVATION
+--------------------------------------------------------------------------------
+This project is an end-to-end AI-powered Advanced Driver Assistance System (ADAS)
+built to detect and quantify road safety risks from dashcam footage in real time.
+
+WHY THIS PROJECT EXISTS:
+  - Road accidents remain the leading preventable cause of death globally.
+  - Most ADAS research is locked inside expensive OEM hardware (Tesla, Mobileye).
+  - This project demonstrates that a full perception + risk-scoring pipeline can
+    be built purely from open-source components and run on a standard laptop CPU.
+  - Designed for research prototype, educational demonstration, and as a
+    foundation for real-world dashcam-based safety monitoring products.
+
+CORE USE CASES:
+  1. Dashcam video analysis -- upload or select a driving clip and get a fully
+     annotated, HUD-overlaid output video with risk levels per object.
+  2. Fleet safety monitoring -- batch process videos to identify high-risk driving.
+  3. Research / academia -- a clean ML pipeline (feature extraction to
+     classification) for studying driving risk from monocular video.
+  4. Driver training -- show drivers exactly what an AI sees as dangerous.
+
+KEY CAPABILITIES:
+  - Detects: cars, motorcycles, bicycles, buses, trucks, pedestrians, animals.
+  - Estimates real-world metric distance (meters) from a single monocular camera.
+  - Tracks objects across frames with persistent IDs (ByteTrack).
+  - Classifies each object as LOW / MEDIUM / CRITICAL risk in real time.
+  - Detects blind-spot intrusions and aggressive cut-in maneuvers.
+  - Disambiguates riders from pedestrians (no false pedestrian alarms on bikes).
+  - Renders a professional automotive HUD overlay on the output video.
+  - Provides a Streamlit web dashboard with telemetry, logs, and ML benchmarks.
+
+--------------------------------------------------------------------------------
+2. TECHNOLOGY STACK
+--------------------------------------------------------------------------------
+
+FRAMEWORK / LIBRARY      VERSION        PURPOSE
+ultralytics              >=8.4.0        YOLO11 object detection + ByteTrack MOT
+streamlit                >=1.40.0       Web dashboard UI
+torch / torchvision      >=2.0.0        Deep learning backend for YOLO
+opencv-python            >=4.8.0        Frame-level video I/O, HUD rendering
+numpy                    >=1.24.0       Numerical / vector operations
+pandas                   >=2.0.0        Dataset management, telemetry tables
+scikit-learn             >=1.3.0        Decision Tree, Random Forest, GroupShuffleSplit
+xgboost                  >=2.0.0        Gradient Boosted Tree risk classifier
+matplotlib / seaborn     >=3.7.0        Confusion matrix & feature importance plots
+imageio-ffmpeg           >=0.5.0        Bundled FFmpeg for H.264 MP4 encoding
+lap                      >=0.5.12       Linear Assignment Problem solver (ByteTrack)
+joblib                   >=1.3.0        Model serialization (.joblib)
+
+YOLO MODEL USED: yolo11n.pt  (YOLO11 Nano -- fastest variant, best for CPU)
+  - Pretrained on COCO 80-class dataset.
+  - Used for both detection-only and tracking (ByteTrack integrated).
+  - Inference resolution: configurable (original / 720p / 480p) from UI.
+
+--------------------------------------------------------------------------------
+3. PROJECT DIRECTORY STRUCTURE
+--------------------------------------------------------------------------------
+
+ROAD-RISK-DETECTION/
+  app.py                          Main Streamlit dashboard (entry point)
+  yolo11n.pt                      Pretrained YOLO11 Nano weights
+  requirements.txt                Python dependencies
+  context.txt                     THIS FILE -- project reference document
+  config/
+    config.py                     All global constants and thresholds
+  src/
+    perception/
+      detector.py                 YOLO detection + rider disambiguation filter
+      tracker.py                  ByteTrack multi-object tracking + temporal state
+      depth_estimator.py          Monocular metric distance estimation
+      lane_detector.py            Lane zones, blind-spot & cut-in analysis
+    risk_engine/
+      feature_extractor.py        Feature vector builder for ML classifier
+      classifier.py               Hybrid ML + rule-based risk evaluator
+      train_risk_model.py         ML training pipeline (offline, run once)
+    pipeline/
+      video_processor.py          Main frame-by-frame processing + HUD rendering
+      sample_data.py              Synthetic dashcam video generator
+    evaluation/
+      evaluator.py                Model performance reports & visualizations
+  data/
+    sample_videos/                Preloaded and uploaded driving clips
+    models/                       Saved ML model artifacts (.joblib, .json)
+    training_data/                Synthesized training CSV dataset
+
+--------------------------------------------------------------------------------
+4. CONFIGURATION -- config/config.py
+--------------------------------------------------------------------------------
+
+This file is the single source of truth for all tunable parameters.
+
+YOLO SETTINGS:
+  YOLO_MODEL_NAME       = "yolo11n.pt"
+  CONFIDENCE_THRESHOLD  = 0.35        Detection confidence cutoff
+  IOU_THRESHOLD         = 0.45        Non-max suppression overlap threshold
+
+TARGET COCO ROAD CLASSES (only these are processed, all others ignored):
+  0  -> "pedestrian"
+  1  -> "bicycle"
+  2  -> "car"
+  3  -> "motorcycle"
+  5  -> "bus"
+  7  -> "truck"
+  15-19 -> "animal"  (cat, dog, horse, sheep, cow)
+
+OBJECT PHYSICAL HEIGHT PRIORS (used for distance estimation):
+  pedestrian: 1.70 m
+  bicycle:    1.10 m
+  car:        1.48 m
+  motorcycle: 1.15 m
+  bus:        3.20 m
+  truck:      3.00 m
+  animal:     1.00 m
+
+CAMERA PARAMETERS (dashcam calibration assumptions):
+  CAMERA_MOUNT_HEIGHT = 1.35 m   typical dashcam height above road
+  CAMERA_PITCH_ANGLE  = 0.0 rad  level horizon assumed
+  CAMERA_FOV_V        = 45.0 deg vertical field of view
+  CAMERA_FOV_H        = 75.0 deg horizontal field of view
+
+EGO-ZONE SPATIAL BOUNDARIES (normalized 0.0-1.0 horizontal coordinates):
+  EGO_LANE_LEFT    = 0.35    left edge of ego driving corridor
+  EGO_LANE_RIGHT   = 0.65    right edge of ego driving corridor
+  LEFT_BLIND_MAX   = 0.22    beyond this left = left blind spot
+  RIGHT_BLIND_MIN  = 0.78    beyond this right = right blind spot
+  EGO_HOOD_Y       = 0.85    bottom of frame = ego vehicle hood
+
+RISK THRESHOLDS:
+  TTC_CRITICAL       = 2.0 s     Time-to-Collision triggers CRITICAL alert
+  TTC_CAUTION        = 4.0 s     Time-to-Collision triggers MEDIUM alert
+  DISTANCE_CRITICAL  = 7.0 m     Ego-lane object closer than this = CRITICAL
+  DISTANCE_CAUTION   = 18.0 m    Ego-lane object closer than this = MEDIUM
+
+HUD COLORS (BGR format for OpenCV):
+  COLOR_SAFE     = (76, 217, 100)    vibrant green
+  COLOR_CAUTION  = (0, 204, 255)     amber / yellow-orange
+  COLOR_CRITICAL = (50, 50, 240)     red
+
+--------------------------------------------------------------------------------
+5. MODULE-BY-MODULE CODE WALKTHROUGH
+--------------------------------------------------------------------------------
+
+5.1  src/perception/detector.py -- RoadObjectDetector
+-----------------------------------------------------
+PURPOSE:
+  Wraps the Ultralytics YOLO11 model to perform road object detection and
+  native ByteTrack multi-object tracking. Applies a post-processing filter
+  that prevents a common COCO dataset artifact: people riding motorcycles
+  getting detected as both "motorcycle" AND "pedestrian" simultaneously.
+
+KEY METHODS:
+
+  detect(frame) -> List[Dict]
+    - Runs model.predict() on a single BGR frame.
+    - Filters to only ROAD_CLASSES defined in config.
+    - Builds rich metadata dict per detection:
+        box, norm_box, cls_id, class_name, confidence,
+        center, bottom_center, width, height, area, norm_area
+    - Applies _suppress_rider_pedestrians() as post-processing.
+
+  track(frame, persist=True) -> List[Dict]
+    - Runs model.track() with ByteTrack (bytetrack.yaml).
+    - Same metadata as detect() plus "track_id" (persistent across frames).
+    - Also applies _suppress_rider_pedestrians() as post-processing.
+
+  _suppress_rider_pedestrians(items) -> List[Dict]
+    THE RIDER DISAMBIGUATION FILTER:
+    Problem: COCO annotations tag a motorcyclist as BOTH "person" AND
+    "motorcycle". In an ADAS context a rider is not a standalone pedestrian.
+    Solution:
+      - For each "pedestrian" detection, check overlap with nearby
+        "motorcycle" or "bicycle" (significant IoU / alignment check).
+      - If yes -> suppress the pedestrian detection; expand the motorcycle
+        box upward to include the rider's helmet.
+      - For enclosed vehicles (car, bus, truck): if a person is detected
+        largely inside the vehicle bbox (driver through windshield),
+        suppress the phantom pedestrian.
+    Thresholds used:
+      overlap_on_ped > 0.25 OR overlap_on_veh > 0.20 OR iou > 0.15
+        -> suppress pedestrian for motorcycle/bicycle
+      overlap_on_ped > 0.40 OR iou > 0.30
+        -> suppress pedestrian for car/bus/truck
+
+NOTE ON RICKSHAW DETECTION:
+  Earlier versions included logic to reclassify COCO class-2 (car) and
+  class-7 (truck) detections as "rickshaw" based on bounding box aspect
+  ratio and normalized area. This was REMOVED because:
+    - Thresholds caused regular cars to be mislabeled as rickshaws.
+    - No reliable heuristic exists without a dedicated trained class.
+  Auto-rickshaws will now be detected as "car" or "truck" (whichever
+  COCO class wins the softmax).
+
+5.2  src/perception/tracker.py -- MultiObjectTracker + TrackState
+-----------------------------------------------------------------
+PURPOSE:
+  Maintains temporal state per tracked object across frames. Computes:
+    - Relative velocity (closing speed in m/s)
+    - Lateral velocity (cross-lane movement in normalized x/frame units)
+    - Time-to-Collision (TTC in seconds)
+    - Track trajectory history (list of centroid positions for HUD drawing)
+  Also applies temporal class voting to prevent identity flip-flopping
+  when object classification changes frame-to-frame at distance.
+
+KEY CONSTANTS:
+  CLASS_NAME_TO_ID  -- maps class name string -> COCO integer class id.
+  TRACK_HISTORY_LEN = 15 frames  (sliding window for velocity estimation)
+  MAX_TRACK_AGE     = 30 frames  (delete track if unseen this long)
+
+  TrackState.update(det, distance_m, timestamp)
+    - Updates kinematic quantities using finite differences.
+    - EMA smoothing (alpha=0.35) for velocity.
+    - TTC = distance / abs(closing_speed) when speed is negative.
+
+  TrackState.get_stable_class()
+    - Confidence-weighted voting oracle to stabilize class identity.
+    - Fast-moving objects with vehicle votes -> return highest-voted vehicle.
+
+  MultiObjectTracker.update_tracks(raw_detections, distances, timestamp)
+    - Associates ByteTrack IDs -> TrackState objects.
+    - Creates new TrackState for new tracks; expires stale ones.
+    - Returns list of dicts merging detection + kinematic state.
+
+5.3  src/perception/depth_estimator.py -- MonocularDistanceEstimator
+--------------------------------------------------------------------
+PURPOSE:
+  Estimates real-world distance in meters from a single monocular dashcam.
+  No stereo camera, LiDAR, or GPS required.
+
+HOW IT WORKS -- Fused Dual-Method Estimation:
+
+  METHOD 1 -- Class Dimension Prior (Pinhole Camera Model):
+    Z_height = (focal_length_px x real_object_height_m) / bbox_height_px
+    focal_length_px derived from frame height and vertical FOV.
+    real_object_height_m comes from OBJECT_TYPICAL_HEIGHTS in config.
+    Most accurate for far/partially occluded objects.
+
+  METHOD 2 -- Ground-Contact Perspective Projection (Flat Road Assumption):
+    angle_below_horizon = atan2(bottom_y - horizon_y, focal_length_px) + pitch
+    Z_ground = camera_height / tan(angle_below_horizon)
+    Uses the bottom-center of the bounding box (ground contact point).
+    Most accurate for nearby objects.
+
+  DYNAMIC FUSION:
+    norm_y = bottom_y / frame_height
+    if norm_y > 0.70: weight_ground = 0.75  (close object, trust ground proj)
+    if norm_y > 0.50: weight_ground = 0.50  (equal blend)
+    else:             weight_ground = 0.25  (far object, trust dimension prior)
+    fused_distance = w * Z_ground + (1-w) * Z_height
+    Clamped to [1.0 m, 120.0 m].
+    All distances labeled as "(est)" in HUD -- not claimed as exact.
+
+5.4  src/perception/lane_detector.py -- LaneZoneAnalyzer
+--------------------------------------------------------
+PURPOSE:
+  Maps each object to a spatial driving zone, then generates safety warnings.
+
+SPATIAL ZONES (left to right, normalized x):
+  [0.00-0.22]  Left Blind Spot  (if object is low/rear in frame: norm_y2>=0.60)
+  [0.22-0.35]  Left Lane
+  [0.35-0.65]  Ego Lane  (direct path of travel -- highest risk zone)
+  [0.65-0.78]  Right Lane
+  [0.78-1.00]  Right Blind Spot
+
+SAFETY EVENT DETECTION:
+  1. Blind-Spot Monitoring:
+       CRITICAL if dist < 8m, MEDIUM otherwise.
+       Warning: "X IN LEFT/RIGHT BLIND SPOT -- DO NOT CHANGE LANE"
+  2. Cut-In Detection:
+       Left-lane object with positive lateral_velocity (moving right->ego)
+       Right-lane object with negative lateral_velocity (moving left->ego)
+       CRITICAL if dist < 15m or TTC < 3.5s; MEDIUM otherwise.
+  3. Ego Lane Lead Vehicle Analysis:
+       Closing rapidly (rel_vel < -1.5m/s, dist < 18m) -> CRITICAL or MEDIUM
+       Too close (dist < 7m) -> CRITICAL regardless of speed
+  4. Fast Approaching Object (any zone):
+       rel_vel < -3.5m/s and dist < 20m -> MEDIUM
+
+  draw_lane_guides(frame):
+    - Perspective trapezoid for ego corridor (green-tinted overlay).
+    - Left and right blind-spot boundary polygons in blue.
+
+5.5  src/risk_engine/feature_extractor.py -- RiskFeatureExtractor
+-----------------------------------------------------------------
+PURPOSE:
+  Converts per-object state dict into a 14-dimension float32 feature vector
+  for the ML risk classifier.
+
+FEATURE VECTOR (14 dimensions):
+   1. distance_m          estimated distance in meters
+   2. rel_velocity_mps    closing speed (negative = approaching)
+   3. ttc_seconds         time to collision (clamped to 10.0s)
+   4. lateral_velocity    cross-lane movement rate
+   5. norm_area           bbox area as fraction of frame
+   6. aspect_ratio        bbox width / height
+   7. norm_cx             normalized horizontal center
+   8. norm_bottom_y       normalized bbox bottom y
+   9. is_ego_lane         1.0 if in ego lane
+  10. is_blind_spot       1.0 if in blind spot zone
+  11. is_cutting_in       1.0 if cut-in detected
+  12. class_code          car=0, motorcycle=1, bicycle=2, bus=3,
+                          truck=4, pedestrian=5, animal=6
+  13. traffic_density     total objects in frame
+  14. sudden_movement     1.0 if abs(lat_vel)>0.12 OR rel_vel < -4.0
+
+5.6  src/risk_engine/classifier.py -- DrivingRiskClassifier
+-----------------------------------------------------------
+PURPOSE:
+  Hybrid risk engine: ML model + hard automotive safety guardrails.
+  Outputs: LOW | MEDIUM | CRITICAL per object per frame.
+
+LAYER 1 -- ML Model Inference:
+  Calls RiskFeatureExtractor.extract_features()
+  Runs model.predict() -> integer label (0=LOW, 1=MEDIUM, 2=CRITICAL)
+  Falls back to rules-only if model file is missing.
+
+LAYER 2 -- Safety Guardrails (never softened, always enforced):
+  Rule A: TTC < 2.0s in ego lane or cutting-in -> CRITICAL
+  Rule A: TTC < 4.0s -> at least MEDIUM
+  Rule B: dist < 7.0m in ego lane -> CRITICAL ("EXTREMELY CLOSE -- BRAKE")
+  Rule B: dist < 18.0m in ego lane -> at least MEDIUM
+  Rule C: blind spot AND dist < 8.0m -> CRITICAL
+  Rule C: cutting_in AND dist < 14.0m -> CRITICAL
+  Rule D: dist > 30m AND receding -> force LOW (prevent false positives)
+
+RISK SCORE (0.0-1.0 continuous):
+  CRITICAL: 0.85 + proximity bonus (up to 1.0 as dist -> 0)
+  MEDIUM:   0.50 + proximity bonus (up to 0.80)
+  LOW:      15 / (dist + 1), clamped to [0.05, 0.35]
+
+5.7  src/risk_engine/train_risk_model.py -- Training Pipeline
+------------------------------------------------------------
+PURPOSE: Offline script, run once:
+  python src/risk_engine/train_risk_model.py
+
+DATASET: 24 scenes x 80 frames, 11 scene types:
+  highway_cruising, urban_dense_traffic, motorcycle_cut_in,
+  lead_vehicle_sudden_braking, blind_spot_overtaking,
+  pedestrian_crossing_hazard, safe_adjacent_truck,
+  bicycle_shoulder_riding, rural_animal_crossing,
+  congested_stop_and_go, expressway_lane_change
+
+ZERO-LEAKAGE GUARANTEE:
+  Train/test split by scene_id (GroupShuffleSplit).
+  An assertion crashes training if any train/test scene overlap is detected.
+  ~25% of scenes reserved for test set; all 3 risk levels represented.
+
+MODELS COMPARED:
+  Decision Tree  (max_depth=6, min_samples_leaf=10)
+  Random Forest  (100 trees, max_depth=8, min_samples_leaf=5)
+  XGBoost        (100 rounds, max_depth=5, lr=0.08)
+
+METRICS: accuracy, precision/recall/f1 (macro + weighted), ROC-AUC OvR
+
+ARTIFACTS SAVED to data/models/:
+  best_risk_model.joblib          best model by F1-macro (usually XGBoost)
+  model_evaluation_metrics.json   detailed metrics of best model
+  model_comparison.json           all 3 models, confusion matrices,
+                                  feature importances
+
+5.8  src/pipeline/video_processor.py -- VideoProcessor
+------------------------------------------------------
+PURPOSE: Orchestrates per-frame inference and writes HUD-annotated video.
+
+FRAME PIPELINE ORDER (per processed frame):
+  1. detector.track(frame)              YOLO + ByteTrack detection
+  2. depth_estimator.estimate_batch()   metric distance per detection
+  3. tracker.update_tracks()            velocity, TTC, trajectory
+  4. lane_analyzer.analyze_interactions() zones, cut-in, blind-spot
+  5. risk_classifier.evaluate_risk()    ML + guardrails -> risk level
+  6. _render_hud()                      draw HUD overlay on frame
+
+HUD ELEMENTS RENDERED:
+  - Ego lane corridor (green perspective trapezoid)
+  - Trajectory breadcrumbs (colored polylines per object)
+  - Corner-bracket bounding boxes (color = risk level)
+  - Info pill cards: CLASS #ID (CONF%) / Dist ~Xm / Speed / TTC
+  - Top status bar: "AI ADAS MONITOR | STATUS: CRITICAL"
+  - Centered warning banner (color coded red/amber)
+
+VIDEO ENCODING:
+  OpenCV VideoWriter -> MJPG .avi (temp)
+  -> imageio-ffmpeg libx264 H.264 MP4 (browser-compatible for Streamlit)
+  -> temp .avi deleted after encode
+
+CONFIG OPTIONS (from UI):
+  conf_threshold    0.20-0.80
+  target_resolution None / (1280,720) / (854,480)
+  frame_skip        1-4 (higher = faster, lower fidelity)
+
+5.9  src/pipeline/sample_data.py -- generate_realistic_dashcam_video
+--------------------------------------------------------------------
+PURPOSE: Synthetic 30-second dashcam video via pure OpenCV (no real footage).
+Simulates: road perspective, multiple vehicles, motorcycle cut-in, pedestrian.
+Used as fallback when preloaded real clips are unavailable.
+
+5.10  src/evaluation/evaluator.py -- ModelEvaluator
+---------------------------------------------------
+PURPOSE: Reads model_comparison.json and renders visual analytics in Tab 3.
+  get_comparison_table()           3-model benchmark DataFrame
+  get_classification_report_df()   per-class P/R/F1 for best model
+  plot_confusion_matrix()          dark-mode seaborn heatmap
+  plot_feature_importances()       horizontal bar chart, top 10 features
+
+5.11  app.py -- Streamlit Dashboard
+-----------------------------------
+Run: streamlit run app.py
+
+THEME: Dark cyber/automotive (bg #0b0f19, accent #38bdf8, custom CSS)
+
+SIDEBAR:
+  Video source: Preloaded sample or file upload (mp4/avi/mov/mkv)
+  Preloaded samples (auto-downloaded from Intel IoT sample-videos repo):
+    * Highway Driving (car-detection.mp4)
+    * Urban Multi-Modal (person-bicycle-car-detection.mp4)
+    * Highway Cut-In Simulation (synthetic, from sample_data.py)
+  Frame Skip slider (1-4)
+  YOLO Confidence slider (0.20-0.80)
+  Processing Resolution selector (Original / 720p / 480p)
+  Analyze Video button
+
+TABS:
+  Tab 1 -- Video Analysis & HUD Studio
+    Source video + HUD output side-by-side
+    Progress bar during processing
+    4 metric cards + most-critical-event banner
+    Object inventory (count per class)
+
+  Tab 2 -- Risk Telemetry & Hazard Logs
+    Chronological table of MEDIUM/CRITICAL warnings:
+    Frame#, Time(s), Risk Level, Advisory Text, Object Class, Distance
+
+  Tab 3 -- ML Model Evaluation & Performance
+    Algorithm benchmark table
+    Confusion matrix heatmap
+    Feature importance chart
+    Per-class classification report
+
+  Tab 4 -- ADAS Architecture & Safety Principles
+    Static documentation: distance methodology, spatial zones,
+    rider disambiguation, ISO 26262 advisory-only safety principle
+
+--------------------------------------------------------------------------------
+6. KEY DESIGN DECISIONS
+--------------------------------------------------------------------------------
+
+1. YOLO11n CHOSEN FOR CPU SPEED:
+   Nano model runs >15 FPS on modern CPU. Larger models are too slow
+   for real-time use without GPU.
+
+2. BYTETRACK FOR TRACKING:
+   Built into Ultralytics YOLO. Reliable occlusion handling, persistent
+   IDs used to build velocity/TTC temporal estimates.
+
+3. MONOCULAR DISTANCE WITHOUT STEREO/LIDAR:
+   Geometric dual-method fusion (ground contact + height prior) is
+   lightweight, explainable, and runs at full CPU speed.
+   All distances clearly marked "(est)" in HUD.
+
+4. HYBRID ML + RULE-BASED RISK:
+   Pure ML fails on OOD inputs. Hard physical guardrails (TTC<2s, dist<7m)
+   are non-negotiable. Hybrid design ensures safety even if ML is wrong.
+
+5. ZERO DATA LEAKAGE:
+   Train/test partitioned strictly by scene_id. Assertion crashes pipeline
+   if any overlap is detected. Reported metrics are honest.
+
+6. H.264 RE-ENCODING:
+   OpenCV MJPG/mp4v not compatible with all browsers via Streamlit st.video().
+   Re-encoding to libx264/yuv420p ensures universal playback.
+
+7. RIDER SUPPRESSION FILTER:
+   Without this, every motorcyclist generates a false PEDESTRIAN alert.
+   Filter uses IoU/alignment checking to suppress rider-pedestrian duplicates.
+
+--------------------------------------------------------------------------------
+7. HOW TO RUN
+--------------------------------------------------------------------------------
+
+INSTALL:
+  pip install -r requirements.txt
+
+RUN DASHBOARD:
+  streamlit run app.py
+
+TRAIN ML MODEL (optional, run once):
+  python src/risk_engine/train_risk_model.py
+  (Saves best_risk_model.joblib to data/models/)
+  If not run, system operates on safety guardrails only.
+
+--------------------------------------------------------------------------------
+8. KNOWN LIMITATIONS
+--------------------------------------------------------------------------------
+
+1. Auto-rickshaws classified as "car" or "truck" -- COCO has no rickshaw class.
+   Previous heuristic reclassification was removed due to false positives.
+
+2. Distance estimates may have 20-40% error for partially occluded objects,
+   atypical proportions, or extreme viewing angles. Interpret as approximate.
+
+3. Synthetic training data may not capture all real-world edge cases.
+   Model accuracy on dense urban Indian traffic may differ from test metrics.
+
+4. No night-vision or rain/low-visibility handling.
+   Accuracy degrades significantly in poor lighting.
+
+5. Processing: ~8-18 FPS at original resolution on CPU.
+   Use 480p or frame_skip=2 for faster throughput on low-end hardware.
+
+================================================================================
+END OF CONTEXT DOCUMENT
+================================================================================

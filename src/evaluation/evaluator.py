@@ -25,10 +25,7 @@ from config.config import MODELS_DIR
 LABEL_NAMES = ["LOW", "MEDIUM", "CRITICAL"]
 
 class ModelEvaluator:
-    """
-    Evaluator providing authentic, empirical performance reports
-    from the multi-scene cross-validation experiment.
-    """
+ 
 
     def __init__(self, comparison_file: Path = MODELS_DIR / "model_comparison.json"):
         self.comparison_file = comparison_file
@@ -42,11 +39,7 @@ class ModelEvaluator:
             except Exception as e:
                 print(f"[Evaluator] Error loading comparison file: {e}")
         return {}
-
     def get_comparison_table(self) -> pd.DataFrame:
-        """
-        Generate comparative summary table across Decision Tree, Random Forest, and XGBoost.
-        """
         if not self.comparison_data or "comparison" not in self.comparison_data:
             return pd.DataFrame()
 
@@ -63,14 +56,10 @@ class ModelEvaluator:
         return pd.DataFrame(rows)
 
     def get_classification_report_df(self) -> pd.DataFrame:
-        """
-        Format best model's per-class classification report into a displayable DataFrame.
-        """
         best_name = self.comparison_data.get("best_model", "XGBoost")
         comp = self.comparison_data.get("comparison", {})
         if best_name not in comp:
             return pd.DataFrame()
-
         rep = comp[best_name].get("classification_report", {})
         rows = []
         for label in LABEL_NAMES:
@@ -83,11 +72,7 @@ class ModelEvaluator:
                     "Support (Samples)": int(rep[label]['support']),
                 })
         return pd.DataFrame(rows)
-
     def plot_confusion_matrix(self) -> Optional[plt.Figure]:
-        """
-        Generate dark-mode styled Confusion Matrix heatmap.
-        """
         best_name = self.comparison_data.get("best_model", "XGBoost")
         comp = self.comparison_data.get("comparison", {})
         if best_name not in comp:
@@ -140,14 +125,11 @@ class ModelEvaluator:
         importances = comp[best_name].get("feature_importances", {})
         if not importances:
             return None
-
         sorted_feats = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:10]
         f_names = [x[0].replace("_", " ").title() for x in sorted_feats][::-1]
         f_vals = [x[1] for x in sorted_feats][::-1]
-
         fig, ax = plt.subplots(figsize=(7, 4.5), facecolor="#141820")
         ax.set_facecolor("#141820")
-
         bars = ax.barh(f_names, f_vals, color="#38BDF8", height=0.6)
         ax.set_title(f"Top 10 Risk Predictor Features ({best_name})", color="#E2E8F0", fontsize=12, pad=12, weight="bold")
         ax.set_xlabel("Relative Importance Weight", color="#CBD5E1", fontsize=10, labelpad=8)
@@ -158,7 +140,6 @@ class ModelEvaluator:
             w = bar.get_width()
             ax.text(w + 0.005, bar.get_y() + bar.get_height() / 2, f"{w:.3f}",
                     ha="left", va="center", color="#F1F5F9", fontsize=9, weight="bold")
-
         ax.set_xlim(0, max(f_vals) * 1.18)
         plt.tight_layout()
         return fig

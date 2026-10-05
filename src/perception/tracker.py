@@ -139,9 +139,18 @@ class TrackState:
 
         if veh_votes >= 1.2 and veh_votes > animal_votes:
             return max(["car", "motorcycle", "truck", "bus"], key=lambda c: self.class_votes[c])
-        elif animal_votes >= 1.0 and animal_votes >= ped_votes:
+
+        # Animal Stability & Distance Priority:
+        # Quadruped animals (cows, cattle, horses, dogs) are frequently mistaken for pedestrians
+        # when far away due to lower resolution and COCO dataset bias towards humans.
+        # Conversely, true human pedestrians are virtually NEVER classified as cows or horses.
+        # Once an object receives animal detections or has animal presence in recent history,
+        # prioritize 'animal' over 'pedestrian' so it is recognized as animal from distance.
+        recent_has_animal = any(c == "animal" for c, _ in list(self.class_history)[-8:])
+        if not is_fast_vehicle and (animal_votes >= 0.35 or recent_has_animal):
             return "animal"
-        elif ped_votes >= 1.0 and ped_votes > animal_votes:
+
+        if ped_votes >= 1.0 and ped_votes > animal_votes:
             return "pedestrian"
         else:
             return self.class_votes.most_common(1)[0][0]

@@ -265,8 +265,6 @@ class VideoProcessor:
             # Distance explicitly labeled as estimated in meters
             dist_text = f"Dist: ~{dist_m:.1f}m (est)"
             extra_text = []
-            if abs(rel_spd) > 1.0:
-                extra_text.append(f"{'+' if rel_spd > 0 else ''}{rel_spd:.0f} km/h")
             if ttc is not None and ttc < 6.0:
                 extra_text.append(f"TTC: {ttc:.1f}s")
             extra_str = " | ".join(extra_text)

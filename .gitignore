@@ -32,3 +32,4 @@ data/sample_videos/*.jpg
 # Temporary / generated files
 *.log
 *.tmp
+Results/AUTO_RIKSHAW.mp4

@@ -16,6 +16,7 @@ for directory in [SAMPLE_VIDEOS_DIR, MODELS_DIR, TRAINING_DATA_DIR]:
 # YOLO Object Detection Settings
 YOLO_MODEL_NAME = "yolo11n.pt"  # Latest Ultralytics YOLO11 nano model for fast CPU/GPU inference
 CONFIDENCE_THRESHOLD = 0.35
+ANIMAL_CONFIDENCE_THRESHOLD = 0.20  # Sensitive threshold for distant quadruped animals (cow, horse, dog)
 IOU_THRESHOLD = 0.45
 # Target COCO Classes for Road Perception
 # 0: person, 1: bicycle, 2: car, 3: motorcycle, 5: bus, 7: truck
@@ -41,8 +42,8 @@ OBJECT_TYPICAL_HEIGHTS = {
     "car": 1.48,
     "motorcycle": 1.15,
     "bus": 3.20,
-    "truck": 3.00,
-    "animal": 1.00,
+    "truck": 4.00,
+    "animal": 1.35,  # Typical shoulder height of cattle/cows/horses on roadways
 }
 
 # Camera Geometric Parameters (Typical Dashcam Calibration)

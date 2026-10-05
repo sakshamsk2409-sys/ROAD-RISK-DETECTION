@@ -1,0 +1,76 @@
+{
+  "accuracy": 0.9731,
+  "precision_macro": 0.5996,
+  "recall_macro": 0.6574,
+  "f1_macro": 0.6251,
+  "precision_weighted": 0.9689,
+  "recall_weighted": 0.9731,
+  "f1_weighted": 0.9699,
+  "roc_auc": 0.0,
+  "confusion_matrix": [
+    [
+      1878,
+      36,
+      0
+    ],
+    [
+      2,
+      224,
+      0
+    ],
+    [
+      0,
+      20,
+      0
+    ]
+  ],
+  "classification_report": {
+    "LOW": {
+      "precision": 0.9989361702127659,
+      "recall": 0.9811912225705329,
+      "f1-score": 0.9899841855561413,
+      "support": 1914.0
+    },
+    "MEDIUM": {
+      "precision": 0.8,
+      "recall": 0.9911504424778761,
+      "f1-score": 0.8853754940711462,
+      "support": 226.0
+    },
+    "CRITICAL": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 20.0
+    },
+    "accuracy": 0.9731481481481481,
+    "macro avg": {
+      "precision": 0.599645390070922,
+      "recall": 0.657447221682803,
+      "f1-score": 0.6251198932090959,
+      "support": 2160.0
+    },
+    "weighted avg": {
+      "precision": 0.9688721434200157,
+      "recall": 0.9731481481481481,
+      "f1-score": 0.9698724966733953,
+      "support": 2160.0
+    }
+  },
+  "feature_importances": {
+    "distance_m": 0.21850000321865082,
+    "rel_velocity_mps": 0.03400000184774399,
+    "ttc_seconds": 0.1597999930381775,
+    "lateral_velocity": 0.009100000374019146,
+    "norm_area": 0.39250001311302185,
+    "aspect_ratio": 0.0,
+    "norm_cx": 0.0210999995470047,
+    "norm_bottom_y": 0.0,
+    "is_ego_lane": 0.0,
+    "is_blind_spot": 0.0,
+    "is_cutting_in": 0.045099999755620956,
+    "class_code": 0.05040000006556511,
+    "traffic_density": 0.06939999759197235,
+    "sudden_movement": 0.0
+  }
+}

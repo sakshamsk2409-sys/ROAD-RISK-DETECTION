@@ -594,21 +594,24 @@ def normalized_object_counts(stats):
     raw = stats.get("detected_objects_count", {}) if stats else {}
     out = {
         "Cars": 0,
-        "Pedestrians": 0,
+        "Roadside Entities": 0,
         "Two Wheelers": 0,
         "Bicycles": 0,
         "Buses": 0,
         "Trucks": 0,
-        "Animals": 0,
         "Others": 0,
     }
 
     aliases = {
         "car": "Cars",
         "cars": "Cars",
-        "person": "Pedestrians",
-        "pedestrian": "Pedestrians",
-        "people": "Pedestrians",
+        "person": "Roadside Entities",
+        "pedestrian": "Roadside Entities",
+        "people": "Roadside Entities",
+        "animal": "Roadside Entities",
+        "animals": "Roadside Entities",
+        "roadside entity": "Roadside Entities",
+        "roadside entities": "Roadside Entities",
         "motorcycle": "Two Wheelers",
         "motorbike": "Two Wheelers",
         "scooter": "Two Wheelers",
@@ -616,8 +619,6 @@ def normalized_object_counts(stats):
         "bike": "Bicycles",
         "bus": "Buses",
         "truck": "Trucks",
-        "animal": "Animals",
-        "animals": "Animals",
     }
 
     for name, count in raw.items():
@@ -1021,9 +1022,9 @@ if navigation == "Dashboard":
 
     with m2:
         render_metric(
-            "Pedestrians",
-            objects["Pedestrians"],
-            "Detected people",
+            "Roadside Entities",
+            objects.get("Roadside Entities", 0),
+            "Detected along road",
             "metric-accent",
         )
 
@@ -1043,10 +1044,14 @@ if navigation == "Dashboard":
             level_cls,
         )
 
+    nearest_display = str(nearest).title()
+    if nearest_display.lower() in ["pedestrian", "animal", "person"]:
+        nearest_display = "Roadside Entity"
+
     with m5:
         render_metric(
             "Nearest Object",
-            str(nearest).title(),
+            nearest_display,
             f"{distance} m estimated",
             "metric-warning" if stats else "metric-accent",
         )
@@ -1137,14 +1142,13 @@ if navigation == "Dashboard":
         for name, count in objects.items():
             icon = {
                 "Cars": "🚘",
-                "Pedestrians": "🚶",
+                "Roadside Entities": "🚶🐕",
                 "Two Wheelers": "🏍️",
                 "Bicycles": "🚲",
                 "Buses": "🚌",
                 "Trucks": "🚚",
-                "Animals": "🐕",
                 "Others": "◉",
-            }[name]
+            }.get(name, "◉")
 
             st.markdown(
                 f"""
@@ -1458,7 +1462,7 @@ elif navigation == "ADAS Principles":
             "1. Perception & Multi-Object Tracking",
             """
             **YOLO11 Object Detector** detects cars, motorcycles, bicycles,
-            buses, trucks, pedestrians and animals.
+            buses, trucks, and roadside entities.
 
             **ByteTrack** maintains persistent object identities across frames,
             enabling trajectory, closing-speed and TTC-oriented reasoning.

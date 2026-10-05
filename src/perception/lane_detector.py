@@ -88,7 +88,11 @@ class LaneZoneAnalyzer:
             rel_velocity = obj.get("rel_velocity_mps", 0.0)
             dist_m = obj.get("distance_m", 30.0)
             ttc = obj.get("ttc", None)
-            cls_name = obj.get("class_name", "vehicle").upper()
+            raw_cls = obj.get("class_name", "vehicle").lower()
+            if raw_cls in ["pedestrian", "animal", "person"]:
+                cls_name = "ROADSIDE ENTITY"
+            else:
+                cls_name = raw_cls.upper()
 
             is_cutting_in = False
             warning_msg = None

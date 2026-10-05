@@ -110,12 +110,13 @@ class DrivingRiskClassifier:
                     final_risk = "MEDIUM"
 
         # Rule C: Blind-Spot and Aggressive Cut-in
+        display_cls = "ROADSIDE ENTITY" if cls_name in ["pedestrian", "animal", "person"] else cls_name.upper()
         if "blind_spot" in zone and dist_m < 8.0:
             final_risk = "CRITICAL"
-            critical_reason = f"{cls_name.upper()} IN BLIND SPOT — DO NOT CHANGE LANE"
+            critical_reason = f"{display_cls} IN BLIND SPOT — DO NOT CHANGE LANE"
         elif is_cutting_in and dist_m < 14.0:
             final_risk = "CRITICAL"
-            critical_reason = f"{cls_name.upper()} CUT-IN HAZARD — MAINTAIN DISTANCE"
+            critical_reason = f"{display_cls} CUT-IN HAZARD — MAINTAIN DISTANCE"
 
         # Rule D: Distant objects (>30m) receding or stable are safely LOW
         if dist_m > 30.0 and rel_vel >= -0.5:

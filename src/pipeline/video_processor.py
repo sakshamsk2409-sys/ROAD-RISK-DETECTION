@@ -138,9 +138,10 @@ class VideoProcessor:
                     stats["risk_counts"][item_risk] += 1
 
                     dist = item.get("distance_m", 999.0)
+                    display_entity_name = "Roadside Entity" if cls_name.lower() in ["pedestrian", "animal", "person"] else cls_name.title()
                     if dist < stats["min_distance_observed"]:
                         stats["min_distance_observed"] = dist
-                        stats["nearest_object_class"] = cls_name
+                        stats["nearest_object_class"] = display_entity_name
 
                     if "blind_spot" in item.get("spatial_zone", ""):
                         stats["blind_spot_events"] += 1
@@ -165,7 +166,7 @@ class VideoProcessor:
                                 "time_sec": round(current_time_sec, 2),
                                 "risk": item_risk,
                                 "text": risk_data["warning"],
-                                "object": cls_name,
+                                "object": display_entity_name,
                                 "distance": dist,
                             })
 
@@ -238,7 +239,11 @@ class VideoProcessor:
         for item in entities:
             box = item["box"]
             x1, y1, x2, y2 = box
-            cls_name = item.get("class_name", "object").upper()
+            cls_raw = item.get("class_name", "object")
+            if cls_raw.lower() in ["pedestrian", "animal", "person"]:
+                cls_name = "ROADSIDE ENTITY"
+            else:
+                cls_name = cls_raw.upper()
             track_id = item.get("track_id", -1)
             dist_m = item.get("distance_m", 0.0)
             rel_spd = item.get("rel_speed_kmh", 0.0)
@@ -271,7 +276,7 @@ class VideoProcessor:
 
             # Draw clean HUD info pill above box
             card_y = max(35, y1 - 8)
-            card_w = max(130, int(len(header_text) * 7.5))
+            card_w = max(130, int(len(header_text) * 8.2))
             card_h = 32 if not extra_str else 44
 
             # Background pill

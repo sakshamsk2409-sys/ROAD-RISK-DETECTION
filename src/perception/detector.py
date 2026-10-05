@@ -19,7 +19,6 @@ from ultralytics import YOLO
 from config.config import (
     YOLO_MODEL_NAME,
     CONFIDENCE_THRESHOLD,
-    ANIMAL_CONFIDENCE_THRESHOLD,
     IOU_THRESHOLD,
     ROAD_CLASSES,
 )
@@ -57,9 +56,8 @@ class RoadObjectDetector:
 
         pedestrians = [item for item in items if item["class_name"] == "pedestrian"]
         vehicles = [item for item in items if item["class_name"] in ("motorcycle", "bicycle", "car", "bus", "truck")]
-        animals = [item for item in items if item["class_name"] == "animal"]
 
-        if not pedestrians or (not vehicles and not animals):
+        if not pedestrians or not vehicles:
             return items
 
         suppressed_indices = set()
@@ -72,24 +70,6 @@ class RoadObjectDetector:
             ped_area = max(1, (px2 - px1) * (py2 - py1))
             ped_cx = (px1 + px2) / 2.0
             ped_w = px2 - px1
-
-            # 1. Check overlap with animals (cows, horses, dogs)
-            # A pedestrian detection overlapping an animal is almost always a duplicate ghost detection of the animal
-            for anim in animals:
-                ax1, ay1, ax2, ay2 = anim["box"]
-                ix1 = max(px1, ax1)
-                iy1 = max(py1, ay1)
-                ix2 = min(px2, ax2)
-                iy2 = min(py2, ay2)
-                if ix2 > ix1 and iy2 > iy1:
-                    inter_area = (ix2 - ix1) * (iy2 - iy1)
-                    overlap_on_ped = inter_area / float(ped_area)
-                    if overlap_on_ped > 0.35:
-                        suppressed_indices.add(ped_idx)
-                        break
-
-            if ped_idx in suppressed_indices:
-                continue
 
             for veh in vehicles:
                 vx1, vy1, vx2, vy2 = veh["box"]
@@ -141,10 +121,9 @@ class RoadObjectDetector:
         Returns a list of detected road objects with bounding boxes and metadata.
         """
         height, width = frame.shape[:2]
-        effective_conf = min(self.conf_threshold, ANIMAL_CONFIDENCE_THRESHOLD)
         results = self.model.predict(
             source=frame,
-            conf=effective_conf,
+            conf=self.conf_threshold,
             iou=self.iou_threshold,
             device=self.device,
             verbose=False,
@@ -166,12 +145,7 @@ class RoadObjectDetector:
             if cls_id not in ROAD_CLASSES:
                 continue
 
-            cname = ROAD_CLASSES[cls_id]
             conf = float(box.conf[0].item())
-            req_conf = ANIMAL_CONFIDENCE_THRESHOLD if cname == "animal" else self.conf_threshold
-            if conf < req_conf:
-                continue
-
             xyxy = box.xyxy[0].cpu().numpy()
             x1, y1, x2, y2 = [int(v) for v in xyxy]
 
@@ -191,7 +165,7 @@ class RoadObjectDetector:
                 "box": [x1, y1, x2, y2],
                 "norm_box": [x1 / width, y1 / height, x2 / width, y2 / height],
                 "cls_id": cls_id,
-                "class_name": cname,
+                "class_name": ROAD_CLASSES[cls_id],
                 "confidence": conf,
                 "center": (cx, cy),
                 "bottom_center": bottom_center,
@@ -201,7 +175,7 @@ class RoadObjectDetector:
                 "norm_area": (bw * bh) / (width * height),
             })
 
-        # Apply rider & animal-pedestrian disambiguation filter
+        # Apply rider disambiguation filter
         return self._suppress_rider_pedestrians(detections)
 
     def track(self, frame: np.ndarray, persist: bool = True) -> List[Dict[str, Any]]:
@@ -210,10 +184,9 @@ class RoadObjectDetector:
         Preserves object IDs across frames and disambiguates riders from pedestrians.
         """
         height, width = frame.shape[:2]
-        effective_conf = min(self.conf_threshold, ANIMAL_CONFIDENCE_THRESHOLD)
         results = self.model.track(
             source=frame,
-            conf=effective_conf,
+            conf=self.conf_threshold,
             iou=self.iou_threshold,
             persist=persist,
             tracker="bytetrack.yaml",
@@ -236,12 +209,7 @@ class RoadObjectDetector:
             if cls_id not in ROAD_CLASSES:
                 continue
 
-            cname = ROAD_CLASSES[cls_id]
             conf = float(box.conf[0].item())
-            req_conf = ANIMAL_CONFIDENCE_THRESHOLD if cname == "animal" else self.conf_threshold
-            if conf < req_conf:
-                continue
-
             track_id = int(box.id[0].item()) if box.id is not None else -1
 
             xyxy = box.xyxy[0].cpu().numpy()
@@ -263,7 +231,7 @@ class RoadObjectDetector:
                 "box": [x1, y1, x2, y2],
                 "norm_box": [x1 / width, y1 / height, x2 / width, y2 / height],
                 "cls_id": cls_id,
-                "class_name": cname,
+                "class_name": ROAD_CLASSES[cls_id],
                 "confidence": conf,
                 "center": (cx, cy),
                 "bottom_center": bottom_center,
@@ -273,5 +241,5 @@ class RoadObjectDetector:
                 "norm_area": (bw * bh) / (width * height),
             })
 
-        # Apply rider & animal-pedestrian disambiguation filter
+        # Apply rider disambiguation filter
         return self._suppress_rider_pedestrians(tracked_objects)

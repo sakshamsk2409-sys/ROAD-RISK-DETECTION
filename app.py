@@ -751,74 +751,29 @@ st.sidebar.markdown(
 navigation = st.sidebar.radio(
     "Navigation",
     [
-        "Dashboard",
         "Video Input",
-        "Detection & Tracking",
-        "Risk Analysis",
-        "Analytics & Logs",
-        "Model Evaluation",
-        "ADAS Principles",
     ],
     label_visibility="collapsed",
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Video Source**")
-
-video_source_mode = st.sidebar.radio(
-    "Choose source",
-    ["Preloaded Driving Clip", "Upload Driving Video"],
-    index=0,
-    label_visibility="collapsed",
-)
+st.sidebar.markdown("**Upload Driving Video**")
 
 uploaded_file_path = None
 
-if video_source_mode == "Preloaded Driving Clip":
-    sample_options = {
-        "Highway Driving": "real_driving_highway.mp4",
-        "Urban Multi-Modal": "urban_multimodal_driving.mp4",
-        "Highway Cut-In / Motorcycle": "dashcam_sample_multi_hazard.mp4",
-    }
+uploaded_file = st.sidebar.file_uploader(
+    "Choose video file",
+    type=["mp4", "avi", "mov", "mkv"],
+    help="Upload driving footage from a vehicle dashcam.",
+)
 
-    selected_sample_label = st.sidebar.selectbox(
-        "Driving clip",
-        list(sample_options.keys()),
-    )
-    sample_filename = sample_options[selected_sample_label]
-    candidate_path = SAMPLE_VIDEOS_DIR / sample_filename
-
-    if not candidate_path.exists():
-        with st.spinner(f"Preparing {selected_sample_label}..."):
-            if "dashcam_sample" in sample_filename:
-                generate_realistic_dashcam_video(str(candidate_path))
-            else:
-                import urllib.request
-
-                url_map = {
-                    "real_driving_highway.mp4":
-                        "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/car-detection.mp4",
-                    "urban_multimodal_driving.mp4":
-                        "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/person-bicycle-car-detection.mp4",
-                }
-                urllib.request.urlretrieve(url_map[sample_filename], candidate_path)
-
-    uploaded_file_path = str(candidate_path)
-
-else:
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload Driving / Dashcam Video",
-        type=["mp4", "avi", "mov", "mkv"],
-        help="Upload driving footage from a vehicle dashcam.",
-    )
-
-    if uploaded_file is not None:
-        SAMPLE_VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
-        save_dest = SAMPLE_VIDEOS_DIR / f"uploaded_{uploaded_file.name}"
-        with open(save_dest, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        uploaded_file_path = str(save_dest)
-        st.sidebar.success(f"Uploaded: {uploaded_file.name}")
+if uploaded_file is not None:
+    SAMPLE_VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+    save_dest = SAMPLE_VIDEOS_DIR / f"uploaded_{uploaded_file.name}"
+    with open(save_dest, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    uploaded_file_path = str(save_dest)
+    st.sidebar.success(f"Uploaded: {uploaded_file.name}")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Perception Parameters**")
@@ -943,7 +898,7 @@ st.markdown(
 
 if start_analysis:
     if not uploaded_file_path or not os.path.exists(uploaded_file_path):
-        st.error("No valid video selected. Please choose or upload a driving video.")
+        st.error("No video uploaded. Please upload a driving video from the sidebar.")
     else:
         progress_bar = st.progress(0.0)
         status_text = st.empty()
@@ -986,260 +941,12 @@ if start_analysis:
 
 
 # ---------------------------------------------------------------------------
-# PAGE: DASHBOARD
-# ---------------------------------------------------------------------------
-
-if navigation == "Dashboard":
-    stats = st.session_state.processed_stats
-
-    if stats:
-        score, level, level_cls, low, medium, critical = risk_summary(stats)
-        objects = normalized_object_counts(stats)
-        total_warnings = len(stats.get("warnings_logged", []) or [])
-        nearest = stats.get("nearest_object_class", "—")
-        distance = stats.get("min_distance_observed", "—")
-        cut_ins = safe_int(stats.get("cut_in_events", 0))
-        blind_spots = safe_int(stats.get("blind_spot_events", 0))
-    else:
-        score, level, level_cls = 0, "LOW", "metric-safe"
-        low = medium = critical = 0
-        objects = normalized_object_counts({})
-        total_warnings = 0
-        nearest = "—"
-        distance = "—"
-        cut_ins = blind_spots = 0
-
-    # Executive metric row
-    m1, m2, m3, m4, m5 = st.columns(5)
-
-    with m1:
-        render_metric(
-            "Vehicles Detected",
-            objects["Cars"],
-            "Current processed scene",
-            "metric-accent",
-        )
-
-    with m2:
-        render_metric(
-            "Roadside Entities",
-            objects.get("Roadside Entities", 0),
-            "Detected along road",
-            "metric-accent",
-        )
-
-    with m3:
-        render_metric(
-            "Two Wheelers",
-            objects["Two Wheelers"],
-            "Motorcycles / scooters",
-            "metric-accent",
-        )
-
-    with m4:
-        render_metric(
-            "Current Risk",
-            level,
-            f"{critical} critical • {medium} medium • {low} low",
-            level_cls,
-        )
-
-    nearest_display = str(nearest).title()
-    if nearest_display.lower() in ["pedestrian", "animal", "person"]:
-        nearest_display = "Roadside Entity"
-
-    with m5:
-        render_metric(
-            "Nearest Object",
-            nearest_display,
-            f"{distance} m estimated",
-            "metric-warning" if stats else "metric-accent",
-        )
-
-    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-    # Main video + risk panel
-    video_col, analysis_col = st.columns([2.25, 1], gap="medium")
-
-    with video_col:
-        st.markdown(
-            """
-            <div class="video-card">
-                <div class="video-heading">
-                    <span>🎥 Video Analysis & HUD View</span>
-                    <span class="live-pill">● LIVE ANALYSIS</span>
-                </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        if uploaded_file_path and os.path.exists(uploaded_file_path):
-            st.video(uploaded_file_path)
-            st.markdown(
-                f'<div class="video-caption">Source • {Path(uploaded_file_path).name}</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.info("Select a preloaded clip or upload a driving video from the sidebar.")
-
-        if (
-            st.session_state.output_video_path
-            and os.path.exists(st.session_state.output_video_path)
-        ):
-            st.markdown(
-                '<div class="video-heading" style="margin-top:14px;">'
-                '<span>🎯 Processed HUD Output</span>'
-                '<span class="live-pill">● PROCESSED</span>'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-            st.video(st.session_state.output_video_path)
-            st.markdown(
-                f'<div class="video-caption">Annotated output • '
-                f'{Path(st.session_state.output_video_path).name}</div>',
-                unsafe_allow_html=True,
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with analysis_col:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="card-title">🎯 Risk Analysis <span class="live-pill" style="float:right;">● Live</span></div>',
-            unsafe_allow_html=True,
-        )
-        render_risk_gauge(score, level)
-
-        legend = [
-            ("Low Risk", "0–30", "#4ade80"),
-            ("Medium Risk", "31–70", "#fbbf24"),
-            ("High Risk", "71–100", "#fb7185"),
-        ]
-
-        for name, range_text, color in legend:
-            st.markdown(
-                f"""
-                <div style="display:flex;justify-content:space-between;
-                            color:#9eb0c3;font-size:11px;margin:7px 4px;">
-                    <span><span style="color:{color};">●</span> {name}</span>
-                    <span>{range_text}</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="card-title">🚦 Detected Objects '
-            '<span class="live-pill" style="float:right;">Live Count</span></div>',
-            unsafe_allow_html=True,
-        )
-
-        for name, count in objects.items():
-            icon = {
-                "Cars": "🚘",
-                "Roadside Entities": "🚶🐕",
-                "Two Wheelers": "🏍️",
-                "Bicycles": "🚲",
-                "Buses": "🚌",
-                "Trucks": "🚚",
-                "Others": "◉",
-            }.get(name, "◉")
-
-            st.markdown(
-                f"""
-                <div class="object-row">
-                    <span>{icon} &nbsp; {name}</span>
-                    <span class="object-count">{count}</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # Lower dashboard
-    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-    alerts_col, trend_col, model_col = st.columns([1.25, 1.0, 1.0], gap="medium")
-
-    with alerts_col:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="card-title">🔔 Recent Risk Alerts '
-            '<span class="live-pill" style="float:right;">View All</span></div>',
-            unsafe_allow_html=True,
-        )
-        render_alerts(stats, limit=5)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with trend_col:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="card-title">📈 Risk Score Trend '
-            '<span class="live-pill" style="float:right;">● Live</span></div>',
-            unsafe_allow_html=True,
-        )
-        render_trend(stats)
-        st.markdown(
-            '<div class="card-muted" style="margin-top:7px;">'
-            'Relative risk-event intensity over processed frames'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with model_col:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="card-title">📊 Model Performance '
-            '<span class="card-muted" style="float:right;">Test Set</span></div>',
-            unsafe_allow_html=True,
-        )
-
-        try:
-            evaluator = ModelEvaluator()
-            comp_df = evaluator.get_comparison_table()
-
-            if not comp_df.empty:
-                # Prefer a row with the best model if an accuracy-like column exists.
-                accuracy_value = "—"
-                for col in comp_df.columns:
-                    if "accuracy" in str(col).lower():
-                        vals = pd.to_numeric(comp_df[col], errors="coerce").dropna()
-                        if not vals.empty:
-                            value = float(vals.max())
-                            accuracy_value = f"{value * 100:.1f}%" if value <= 1 else f"{value:.1f}%"
-                            break
-
-                p1, p2, p3, p4 = st.columns(4)
-                with p1:
-                    st.metric("Accuracy", accuracy_value)
-                with p2:
-                    st.metric("Models", len(comp_df))
-                with p3:
-                    st.metric("Warnings", total_warnings)
-                with p4:
-                    st.metric("Alerts", cut_ins + blind_spots)
-            else:
-                st.info("Model comparison artifacts not found.")
-        except Exception as e:
-            st.warning(f"Model metrics unavailable: {e}")
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-# ---------------------------------------------------------------------------
 # PAGE: VIDEO INPUT
 # ---------------------------------------------------------------------------
 
-elif navigation == "Video Input":
+if navigation == "Video Input":
     st.markdown("## 🎥 Video Input")
-    st.caption("Choose the driving source and processing configuration from the sidebar.")
+    st.caption("Upload driving footage and configure processing parameters from the sidebar.")
 
     c1, c2 = st.columns(2)
 
@@ -1250,8 +957,8 @@ elif navigation == "Video Input":
             st.video(uploaded_file_path)
             st.caption(Path(uploaded_file_path).name)
         else:
-            st.info("No video selected.")
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.info("No video uploaded. Please upload a driving video from the sidebar.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with c2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -1260,255 +967,22 @@ elif navigation == "Video Input":
         st.write(f"YOLO confidence: **{conf_threshold:.2f}**")
         st.write(f"Resolution: **{proc_resolution}**")
         st.write("Use **Analyze Video** in the sidebar to start processing.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-
-# ---------------------------------------------------------------------------
-# PAGE: DETECTION & TRACKING
-# ---------------------------------------------------------------------------
-
-elif navigation == "Detection & Tracking":
-    st.markdown("## 🎯 Detection & Tracking")
-
-    stats = st.session_state.processed_stats
-    objects = normalized_object_counts(stats or {})
-
-    cols = st.columns(4)
-    for col, (name, count) in zip(cols, list(objects.items())[:4]):
-        with col:
-            render_metric(name, count, "Current processed scene")
-
-    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-    left, right = st.columns([1.6, 1])
-
-    with left:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">🎥 Annotated Detection Output</div>', unsafe_allow_html=True)
-        if st.session_state.output_video_path and os.path.exists(
-            st.session_state.output_video_path
-        ):
-            st.video(st.session_state.output_video_path)
-        else:
-            st.info("Run video analysis first.")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with right:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">Tracking Stack</div>', unsafe_allow_html=True)
-        for title, desc in [
-            ("YOLO11", "Object detection"),
-            ("ByteTrack", "Persistent object identities"),
-            ("Monocular Depth", "Estimated distance"),
-            ("Rider Filter", "Two-wheeler disambiguation"),
-        ]:
-            st.markdown(
-                f"""
-                <div class="object-row">
-                    <span>{title}</span>
-                    <span style="color:#4ade80;">Ready</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.caption(desc)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-# ---------------------------------------------------------------------------
-# PAGE: RISK ANALYSIS
-# ---------------------------------------------------------------------------
-
-elif navigation == "Risk Analysis":
-    st.markdown("## ⚠️ Risk Analysis")
-
-    stats = st.session_state.processed_stats
-
-    if not stats:
-        st.info("Run a video analysis to populate risk telemetry.")
-    else:
-        score, level, level_cls, low, medium, critical = risk_summary(stats)
-
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            render_metric("Risk Index", f"{score:.0f}", "Derived event distribution", level_cls)
-        with c2:
-            render_metric("Critical Events", critical, "High-priority risk frames", "metric-danger")
-        with c3:
-            render_metric("Medium Events", medium, "Caution-level frames", "metric-warning")
-
+    if (
+        st.session_state.output_video_path
+        and os.path.exists(st.session_state.output_video_path)
+    ):
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-        left, right = st.columns(2)
-
-        with left:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown('<div class="card-title">Risk Distribution</div>', unsafe_allow_html=True)
-            st.progress(low / max(low + medium + critical, 1), text=f"Low: {low}")
-            st.progress(medium / max(low + medium + critical, 1), text=f"Medium: {medium}")
-            st.progress(critical / max(low + medium + critical, 1), text=f"Critical: {critical}")
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        with right:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown('<div class="card-title">Latest Alerts</div>', unsafe_allow_html=True)
-            render_alerts(stats, limit=8)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-
-# ---------------------------------------------------------------------------
-# PAGE: ANALYTICS & LOGS
-# ---------------------------------------------------------------------------
-
-elif navigation == "Analytics & Logs":
-    st.markdown("## 📋 Analytics & Hazard Logs")
-
-    stats = st.session_state.processed_stats
-    warnings = (stats or {}).get("warnings_logged", []) or []
-
-    if warnings:
-        warnings_df = pd.DataFrame(warnings)
-        rename_map = {
-            "frame": "Frame #",
-            "time_sec": "Time (s)",
-            "risk": "Risk Level",
-            "text": "Advisory Warning",
-            "object": "Object Class",
-            "distance": "Est. Distance (m)",
-        }
-        st.dataframe(
-            warnings_df.rename(columns=rename_map),
-            use_container_width=True,
-            height=430,
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="card-title">🎯 Processed HUD Output '
+            '<span class="live-pill" style="float:right;">● PROCESSED</span></div>',
+            unsafe_allow_html=True,
         )
-    else:
-        st.info("No warnings logged yet. Process a video first.")
-
-
-# ---------------------------------------------------------------------------
-# PAGE: MODEL EVALUATION
-# ---------------------------------------------------------------------------
-
-elif navigation == "Model Evaluation":
-    st.markdown("## 📊 ML Model Evaluation & Performance")
-    st.write(
-        """
-        Models are evaluated on extracted multi-scene temporal and spatial
-        driving dynamics. Data is partitioned by video/scene ID using
-        `GroupShuffleSplit` to prevent frame-level leakage.
-        """
-    )
-
-    try:
-        evaluator = ModelEvaluator()
-        comp_df = evaluator.get_comparison_table()
-
-        if not comp_df.empty:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown('<div class="card-title">🏆 Model Benchmark Comparison</div>', unsafe_allow_html=True)
-            st.dataframe(comp_df, use_container_width=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-            st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-            col_cm, col_fi = st.columns(2)
-
-            with col_cm:
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.markdown('<div class="card-title">🎯 Confusion Matrix</div>', unsafe_allow_html=True)
-                cm_fig = evaluator.plot_confusion_matrix()
-                if cm_fig:
-                    st.pyplot(cm_fig)
-                else:
-                    st.info("Confusion matrix unavailable.")
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            with col_fi:
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.markdown('<div class="card-title">🌲 Feature Importances</div>', unsafe_allow_html=True)
-                fi_fig = evaluator.plot_feature_importances()
-                if fi_fig:
-                    st.pyplot(fi_fig)
-                else:
-                    st.info("Feature importance chart unavailable.")
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-            rep_df = evaluator.get_classification_report_df()
-            if not rep_df.empty:
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.markdown('<div class="card-title">📑 Classification Report</div>', unsafe_allow_html=True)
-                st.dataframe(rep_df, use_container_width=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-        else:
-            st.warning(
-                "Model comparison artifacts not found. "
-                "Train models using src/risk_engine/train_risk_model.py."
-            )
-    except Exception as e:
-        st.error(f"Could not load model evaluation: {e}")
-
-
-# ---------------------------------------------------------------------------
-# PAGE: ADAS PRINCIPLES
-# ---------------------------------------------------------------------------
-
-elif navigation == "ADAS Principles":
-    st.markdown("## 📘 ADAS Architecture & Safety Principles")
-
-    sections = [
-        (
-            "1. Perception & Multi-Object Tracking",
-            """
-            **YOLO11 Object Detector** detects cars, motorcycles, bicycles,
-            buses, trucks, and roadside entities.
-
-            **ByteTrack** maintains persistent object identities across frames,
-            enabling trajectory, closing-speed and TTC-oriented reasoning.
-            """,
-        ),
-        (
-            "2. Physical Distance Estimation",
-            """
-            Monocular dashcams do not directly provide physical distance.
-            The system uses fused perspective geometry, ground-contact projection,
-            class-dimension priors and confidence weighting.
-
-            Distances are reported explicitly as **estimated distance in meters**.
-            """,
-        ),
-        (
-            "3. Spatial Ego-Zone & Blind-Spot Analysis",
-            """
-            The driving environment is segmented into five corridors:
-            **Left Blind Spot | Left Lane | Ego Corridor | Right Lane | Right Blind Spot**.
-
-            Lateral motion is used to identify potential cross-lane cut-ins.
-            """,
-        ),
-        (
-            "4. Two-Wheeler & Rider Disambiguation",
-            """
-            The rider suppression filter reduces duplicate pedestrian alarms
-            when a person overlaps or aligns with a motorcycle, scooter or bicycle.
-            """,
-        ),
-        (
-            "5. Advisory Safety Guardrails",
-            """
-            Alerts are strictly **advisory and safety-oriented**.
-            The system may recommend slowing down, checking surroundings,
-            maintaining safe following distance or changing lanes only when safe.
-
-            **The system does not claim autonomous vehicle control.**
-            """,
-        ),
-    ]
-
-    for title, body in sections:
-        with st.expander(title, expanded=True):
-            st.markdown(body)
+        st.video(st.session_state.output_video_path)
+        st.caption(f"Annotated output • {Path(st.session_state.output_video_path).name}")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------

@@ -915,8 +915,7 @@ st.markdown(
     """
     <div class="hero">
         <div class="hero-title">
-            ROAD RISK AND DETECTION &<br>
-            Driver <span>Assistance System</span>
+            ROAD RISK AND <span>DETECTION</span>
         </div>
         <div class="hero-text">
             Real-time hazard detection and intelligent alerts for safer driving

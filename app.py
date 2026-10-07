@@ -858,7 +858,8 @@ st.sidebar.markdown(
 navigation = st.sidebar.radio(
     "Navigation",
     [
-        "Video Input",
+        "🎥 Video Input",
+        "📊 Model Info & Analytics",
     ],
     label_visibility="collapsed",
 )
@@ -979,7 +980,7 @@ if start_analysis:
 # PAGE: VIDEO INPUT
 # ---------------------------------------------------------------------------
 
-if navigation == "Video Input":
+if "Video Input" in navigation:
     st.markdown("## 🎥 Video Input")
     st.caption("Upload driving footage and configure processing parameters from the sidebar.")
 
@@ -1017,6 +1018,140 @@ if navigation == "Video Input":
         )
         st.video(st.session_state.output_video_path)
         st.caption(f"Annotated output • {Path(st.session_state.output_video_path).name}")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+elif "Model" in navigation:
+    st.markdown("## 📊 Model Info & Performance Analytics")
+    st.caption("Evaluation metrics, confusion matrix, feature importances, and multi-model benchmark results.")
+
+    evaluator = ModelEvaluator()
+    comp_df = evaluator.get_comparison_table()
+    report_df = evaluator.get_classification_report_df()
+
+    # 1. Executive Performance Metrics Row
+    m1, m2, m3, m4, m5 = st.columns(5)
+    with m1:
+        render_metric("XGBoost Accuracy", "97.31%", "Overall Test Accuracy", "metric-safe")
+    with m2:
+        render_metric("Precision (Macro)", "86.48%", "Macro Precision", "metric-accent")
+    with m3:
+        render_metric("Recall (Macro)", "65.73%", "Hazard Sensitivity", "metric-warning")
+    with m4:
+        render_metric("F1-Score (Macro)", "62.51%", "Macro F1 Metric", "metric-accent")
+    with m5:
+        render_metric("Test Telemetry", "2,160", "Evaluated Driving Frames", "metric-accent")
+
+    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+
+    # 2. Model Architecture & Pipeline Overview Cards
+    st.markdown("### 🧩 Pipeline & Model Architecture")
+    a1, a2, a3 = st.columns(3)
+    with a1:
+        st.markdown(
+            """
+            <div class="card" style="height: 100%;">
+                <div class="card-title">🎯 Object Detection Model</div>
+                <div style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 6px;">YOLO11 Nano (yolo11n.pt)</div>
+                <div class="card-muted" style="line-height: 1.6;">
+                    • <b>Task:</b> Multi-class road object perception<br>
+                    • <b>Classes:</b> Vehicles, Pedestrians, Two-Wheelers, Obstacles<br>
+                    • <b>Target Device:</b> CPU / GPU Real-Time<br>
+                    • <b>Inference Latency:</b> ~35-50ms per frame
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with a2:
+        st.markdown(
+            """
+            <div class="card" style="height: 100%;">
+                <div class="card-title">🔵 Multi-Object Tracker</div>
+                <div style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 6px;">ByteTrack Algorithm</div>
+                <div class="card-muted" style="line-height: 1.6;">
+                    • <b>Task:</b> Persistent object trajectory tracking<br>
+                    • <b>Algorithm:</b> Kalman Filter + Low-score Association<br>
+                    • <b>Feature:</b> Temporal state smoothing & speed estimation<br>
+                    • <b>Robustness:</b> Occlusion handling & track persistence
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with a3:
+        st.markdown(
+            """
+            <div class="card" style="height: 100%;">
+                <div class="card-title">⚠️ Risk Prediction Engine</div>
+                <div style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 6px;">XGBoost Multiclass Classifier</div>
+                <div class="card-muted" style="line-height: 1.6;">
+                    • <b>Input Features:</b> 14 Telemetry Vectors (TTC, Distance, Velocity)<br>
+                    • <b>Outputs:</b> LOW, MEDIUM, CRITICAL Risk probabilities<br>
+                    • <b>Accuracy:</b> 97.31% on unseen test scenes<br>
+                    • <b>Selected:</b> Outperforms Decision Tree & Random Forest
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+
+    # 3. Visual Analytics & Plots Row
+    st.markdown("### 📈 Evaluation Plots & Visual Analytics")
+    g1, g2 = st.columns(2)
+
+    with g1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="card-title">🎯 Confusion Matrix (Unseen Test Scenes)</div>', unsafe_allow_html=True)
+        cm_fig = evaluator.plot_confusion_matrix()
+        if cm_fig:
+            st.pyplot(cm_fig, use_container_width=True)
+        else:
+            st.info("Confusion matrix data not available.")
+        st.markdown(
+            '<div class="card-muted" style="margin-top: 6px;">Displays true ground-truth risk classifications versus predicted outcomes with percentage breakdowns.</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with g2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="card-title">📊 Top Risk Predictor Features</div>', unsafe_allow_html=True)
+        fi_fig = evaluator.plot_feature_importances()
+        if fi_fig:
+            st.pyplot(fi_fig, use_container_width=True)
+        else:
+            st.info("Feature importance data not available.")
+        st.markdown(
+            '<div class="card-muted" style="margin-top: 6px;">Feature importance weights from the XGBoost risk model showing the most influential safety telemetry signals.</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+
+    # 4. Multi-Model Comparison & Classification Breakdown
+    t1, t2 = st.columns([3, 2])
+
+    with t1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="card-title">🏆 Model Benchmark Comparison</div>', unsafe_allow_html=True)
+        if not comp_df.empty:
+            st.dataframe(comp_df, use_container_width=True, hide_index=True)
+        else:
+            st.info("Model comparison benchmark table not available.")
+        st.caption("Benchmark comparison across 3 distinct machine learning architectures evaluated on the same driving dataset.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with t2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="card-title">📋 Class-Wise Report (XGBoost)</div>', unsafe_allow_html=True)
+        if not report_df.empty:
+            st.dataframe(report_df, use_container_width=True, hide_index=True)
+        else:
+            st.info("Classification report not available.")
+        st.caption("Detailed precision, recall, and F1-score for each safety category.")
         st.markdown('</div>', unsafe_allow_html=True)
 
 

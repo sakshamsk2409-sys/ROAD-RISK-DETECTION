@@ -83,51 +83,58 @@ def render_fullscreen_intro():
             0% {{
                 opacity: 1;
                 visibility: visible;
-                pointer-events: all;
+                pointer-events: auto;
             }}
             95% {{
                 opacity: 1;
                 visibility: visible;
-                pointer-events: all;
+                pointer-events: auto;
             }}
             100% {{
                 opacity: 0;
                 visibility: hidden;
                 pointer-events: none;
                 display: none;
+                width: 0;
+                height: 0;
+                left: -99999px;
+                top: -99999px;
+                z-index: -99999;
             }}
         }}
 
         #adas-intro-overlay {{
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            background-color: #000000 !important;
-            z-index: 999999999 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden !important;
-            pointer-events: all !important;
-            animation: vanishIntroOverlay 0.6s ease-out forwards !important;
-            animation-delay: {duration:.2f}s !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            z-index: 999999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            pointer-events: auto;
+            animation: vanishIntroOverlay 0.5s ease-out forwards;
+            animation-delay: {duration:.2f}s;
         }}
 
         #adas-intro-video {{
-            width: 100vw !important;
-            height: 100vh !important;
-            object-fit: cover !important;
-            pointer-events: none !important;
-            user-select: none !important;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            pointer-events: none;
+            user-select: none;
         }}
         </style>
 
         <div id="adas-intro-overlay" oncontextmenu="return false;">
-            <video id="adas-intro-video" autoplay muted  playsinline disablepictureinpicture controlslist="nodownload nofullscreen noremoteplayback">
+            <video id="adas-intro-video" autoplay muted playsinline disablepictureinpicture controlslist="nodownload nofullscreen noremoteplayback" onended="var el=document.getElementById('adas-intro-overlay');if(el){{el.style.display='none';el.style.pointerEvents='none';el.remove();}}">
                 <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
             </video>
+            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;"
+                onload="setTimeout(function(){{var el=document.getElementById('adas-intro-overlay');if(el){{el.style.display='none';el.style.pointerEvents='none';el.remove();}}}}, {(duration * 1000 + 300):.0f});" />
         </div>
         """,
         unsafe_allow_html=True,

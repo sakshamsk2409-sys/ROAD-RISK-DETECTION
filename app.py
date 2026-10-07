@@ -15,8 +15,10 @@ UI redesigned to match the professional automotive dashboard layout:
 import os
 import sys
 import time
+import base64
 from pathlib import Path
 
+import cv2
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -39,6 +41,102 @@ from src.evaluation.evaluator import ModelEvaluator
 
 
 # ---------------------------------------------------------------------------
+# FULLSCREEN INTRO VIDEO (RUNS ONCE ON INITIAL LAUNCH)
+# ---------------------------------------------------------------------------
+
+def render_fullscreen_intro():
+    """
+    Renders an unskippable full-screen intro video overlay on initial startup.
+    Fades out and completely vanishes after playback, leaving 0 traces.
+    """
+    if st.session_state.get("intro_played", False):
+        return
+
+    primary_path = Path(r"C:\Users\saksh\Downloads\gemini_generated_video_5eb40988_gwr_video_mvp.mp4")
+    fallback_path = SAMPLE_VIDEOS_DIR / "intro_video.mp4"
+
+    video_path = primary_path if primary_path.exists() else fallback_path
+    if not video_path.exists():
+        return
+
+    duration = 10.0
+    try:
+        cap = cv2.VideoCapture(str(video_path))
+        fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
+        frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0
+        if frame_count > 0 and fps > 0:
+            duration = frame_count / fps
+        cap.release()
+    except Exception:
+        pass
+
+    try:
+        with open(video_path, "rb") as f:
+            video_b64 = base64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        return
+
+    st.markdown(
+        f"""
+        <style>
+        @keyframes vanishIntroOverlay {{
+            0% {{
+                opacity: 1;
+                visibility: visible;
+                pointer-events: all;
+            }}
+            95% {{
+                opacity: 1;
+                visibility: visible;
+                pointer-events: all;
+            }}
+            100% {{
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+                display: none;
+            }}
+        }}
+
+        #adas-intro-overlay {{
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background-color: #000000 !important;
+            z-index: 999999999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+            pointer-events: all !important;
+            animation: vanishIntroOverlay 0.6s ease-out forwards !important;
+            animation-delay: {duration:.2f}s !important;
+        }}
+
+        #adas-intro-video {{
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover !important;
+            pointer-events: none !important;
+            user-select: none !important;
+        }}
+        </style>
+
+        <div id="adas-intro-overlay" oncontextmenu="return false;">
+            <video id="adas-intro-video" autoplay muted  playsinline disablepictureinpicture controlslist="nodownload nofullscreen noremoteplayback">
+                <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+            </video>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.session_state["intro_played"] = True
+
+
+# ---------------------------------------------------------------------------
 # PAGE CONFIG
 # ---------------------------------------------------------------------------
 
@@ -48,6 +146,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+render_fullscreen_intro()
 
 
 # ---------------------------------------------------------------------------
@@ -775,25 +875,9 @@ if uploaded_file is not None:
     uploaded_file_path = str(save_dest)
     st.sidebar.success(f"Uploaded: {uploaded_file.name}")
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Perception Parameters**")
-
-frame_skip = st.sidebar.slider(
-    "Frame Step / Skip Ratio",
-    min_value=1,
-    max_value=4,
-    value=2,
-    help="1 processes all frames; larger values improve CPU speed.",
-)
-
-conf_threshold = st.sidebar.slider(
-    "YOLO Confidence",
-    min_value=0.20,
-    max_value=0.80,
-    value=0.35,
-    step=0.05,
-    help="Higher values filter uncertain detections.",
-)
+# Perception parameters (internal defaults)
+frame_skip = 2
+conf_threshold = 0.35
 
 proc_resolution = st.sidebar.selectbox(
     "Processing Resolution",
@@ -808,50 +892,12 @@ res_map = {
 }
 
 start_analysis = st.sidebar.button(
-    "🚀  Analyze Video",
+    "ANALYZE VIDEO",
     type="primary",
     use_container_width=True,
 )
 
 
-# ---------------------------------------------------------------------------
-# TOP BAR
-# ---------------------------------------------------------------------------
-
-top_left, top_right = st.columns([5, 2])
-
-with top_left:
-    st.markdown(
-        """
-        <div class="topbar">
-            <div class="brand-wrap">
-                <div class="brand-icon">🚘</div>
-                <div>
-                    <div class="brand-title">
-                        AI Driving Risk Detection <span>& Driver Assistance System</span>
-                    </div>
-                    <div class="brand-subtitle">
-                        Real-time hazard detection, risk analysis and intelligent driver assistance
-                    </div>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with top_right:
-    st.markdown(
-        """
-        <div style="text-align:right;margin-top:8px;">
-            <span class="model-pill">
-                <span class="dot"></span>
-                Model Loaded
-            </span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -862,29 +908,12 @@ st.markdown(
     """
     <div class="hero">
         <div class="hero-title">
-            AI Driving Risk Detection &<br>
+            ROAD RISK AND DETECTION &<br>
             Driver <span>Assistance System</span>
         </div>
         <div class="hero-text">
-            Real-time hazard detection, risk prediction and intelligent alerts for safer driving
-            using YOLO11, multi-object tracking, monocular depth estimation and machine learning.
-        </div>
-        <div class="capability-row">
-            <div class="capability">
-                <strong>🎯 Object Detection</strong>YOLO11
-            </div>
-            <div class="capability">
-                <strong>🔵 Multi-Object Tracking</strong>ByteTrack
-            </div>
-            <div class="capability">
-                <strong>📐 Monocular Depth</strong>Distance estimation
-            </div>
-            <div class="capability">
-                <strong>⚠️ Risk Classification</strong>ML model
-            </div>
-            <div class="capability">
-                <strong>🔔 Driver Alerts</strong>Advisory safety system
-            </div>
+            Real-time hazard detection and intelligent alerts for safer driving
+            using YOLO11, multi-object tracking and machine learning.
         </div>
     </div>
     """,

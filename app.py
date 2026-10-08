@@ -189,32 +189,47 @@ st.markdown(
 }
 
 [data-testid="stSidebar"] > div:first-child {
-    padding-top: 1.2rem;
+    padding-top: 0.2rem !important;
+}
+
+[data-testid="stSidebarContent"] {
+    padding-top: 0.2rem !important;
+}
+
+[data-testid="stSidebarUserContent"] {
+    padding-top: 0.2rem !important;
+}
+
+[data-testid="stSidebarHeader"] {
+    padding-top: 0.2rem !important;
+    padding-bottom: 0rem !important;
+    height: auto !important;
 }
 
 /* ---------- Sidebar ---------- */
 .sidebar-brand {
-    padding: 6px 8px 18px 8px;
+    padding: 2px 4px 16px 4px;
     border-bottom: 1px solid #17283b;
+    margin-top: 0px;
     margin-bottom: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.sidebar-logo {
-    font-size: 30px;
-    line-height: 1;
+.sidebar-logo-img {
+    width: 175px;
+    max-width: 95%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.45));
+    transition: transform 0.25s ease, filter 0.25s ease;
 }
 
-.sidebar-title {
-    color: #f8fbff;
-    font-size: 17px;
-    font-weight: 800;
-    margin-top: 8px;
-}
-
-.sidebar-subtitle {
-    color: #71839a;
-    font-size: 11px;
-    margin-top: 3px;
+.sidebar-logo-img:hover {
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 24px rgba(56, 189, 248, 0.75));
 }
 
 .sidebar-status {
@@ -844,16 +859,41 @@ def render_trend(stats):
 # SIDEBAR NAVIGATION + INPUT
 # ---------------------------------------------------------------------------
 
-st.sidebar.markdown(
-    """
-    <div class="sidebar-brand">
-        <div class="sidebar-logo">🚗</div>
-        <div class="sidebar-title">AI Driving Risk</div>
-        <div class="sidebar-subtitle">ADAS • Perception • Risk Intelligence</div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+def load_logo_base64():
+    logo_candidates = [
+        PROJECT_ROOT / "assets" / "logo.png",
+        PROJECT_ROOT / "assets" / "logo_cyan.png",
+        PROJECT_ROOT / "assets" / "logo_white.png",
+        PROJECT_ROOT / "assets" / "logo_original.png",
+    ]
+    for p in logo_candidates:
+        if p.exists():
+            try:
+                with open(p, "rb") as f:
+                    return base64.b64encode(f.read()).decode("utf-8")
+            except Exception:
+                pass
+    return ""
+
+_logo_b64 = load_logo_base64()
+if _logo_b64:
+    st.sidebar.markdown(
+        f"""
+        <div class="sidebar-brand">
+            <img class="sidebar-logo-img" src="data:image/png;base64,{_logo_b64}" alt="ADAS Logo" />
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    st.sidebar.markdown(
+        """
+        <div class="sidebar-brand">
+            <div style="font-size: 22px; font-weight: 800; color: #38bdf8; text-align: center; letter-spacing: 2px;">ADAS</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 navigation = st.sidebar.radio(
     "Navigation",
@@ -871,7 +911,7 @@ uploaded_file_path = None
 
 uploaded_file = st.sidebar.file_uploader(
     "Choose video file",
-    type=["mp4", "avi", "mov", "mkv"],
+    type=["mp4", "avi", "mov"],
     help="Upload driving footage from a vehicle dashcam.",
 )
 
@@ -984,26 +1024,14 @@ if "Video Input" in navigation:
     st.markdown("## 🎥 Video Input")
     st.caption("Upload driving footage and configure processing parameters from the sidebar.")
 
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">Current Source</div>', unsafe_allow_html=True)
-        if uploaded_file_path and os.path.exists(uploaded_file_path):
-            st.video(uploaded_file_path)
-            st.caption(Path(uploaded_file_path).name)
-        else:
-            st.info("No video uploaded. Please upload a driving video from the sidebar.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with c2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">Processing Configuration</div>', unsafe_allow_html=True)
-        st.write(f"Frame skip: **{frame_skip}**")
-        st.write(f"YOLO confidence: **{conf_threshold:.2f}**")
-        st.write(f"Resolution: **{proc_resolution}**")
-        st.write("Use **Analyze Video** in the sidebar to start processing.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<div class="card-title">Current Source</div>', unsafe_allow_html=True)
+    if uploaded_file_path and os.path.exists(uploaded_file_path):
+        st.video(uploaded_file_path)
+        st.caption(Path(uploaded_file_path).name)
+    else:
+        st.info("No video uploaded. Please upload a driving video from the sidebar.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if (
         st.session_state.output_video_path

@@ -1022,23 +1022,19 @@ if "Video Input" in navigation:
 
 elif "Model" in navigation:
     st.markdown("## 📊 Model Info & Performance Analytics")
-    st.caption("Evaluation metrics, confusion matrix, feature importances, and multi-model benchmark results.")
+    st.caption("Evaluation metrics, pipeline architecture, and multi-model benchmark results.")
 
     evaluator = ModelEvaluator()
     comp_df = evaluator.get_comparison_table()
     report_df = evaluator.get_classification_report_df()
 
     # 1. Executive Performance Metrics Row
-    m1, m2, m3, m4, m5 = st.columns(5)
+    m1, m2, m3 = st.columns(3)
     with m1:
         render_metric("XGBoost Accuracy", "97.31%", "Overall Test Accuracy", "metric-safe")
     with m2:
         render_metric("Precision (Macro)", "86.48%", "Macro Precision", "metric-accent")
     with m3:
-        render_metric("Recall (Macro)", "65.73%", "Hazard Sensitivity", "metric-warning")
-    with m4:
-        render_metric("F1-Score (Macro)", "62.51%", "Macro F1 Metric", "metric-accent")
-    with m5:
         render_metric("Test Telemetry", "2,160", "Evaluated Driving Frames", "metric-accent")
 
     st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
@@ -1094,40 +1090,6 @@ elif "Model" in navigation:
             """,
             unsafe_allow_html=True,
         )
-
-    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-    # 3. Visual Analytics & Plots Row
-    st.markdown("### 📈 Evaluation Plots & Visual Analytics")
-    g1, g2 = st.columns(2)
-
-    with g1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">🎯 Confusion Matrix (Unseen Test Scenes)</div>', unsafe_allow_html=True)
-        cm_fig = evaluator.plot_confusion_matrix()
-        if cm_fig:
-            st.pyplot(cm_fig, use_container_width=True)
-        else:
-            st.info("Confusion matrix data not available.")
-        st.markdown(
-            '<div class="card-muted" style="margin-top: 6px;">Displays true ground-truth risk classifications versus predicted outcomes with percentage breakdowns.</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with g2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">📊 Top Risk Predictor Features</div>', unsafe_allow_html=True)
-        fi_fig = evaluator.plot_feature_importances()
-        if fi_fig:
-            st.pyplot(fi_fig, use_container_width=True)
-        else:
-            st.info("Feature importance data not available.")
-        st.markdown(
-            '<div class="card-muted" style="margin-top: 6px;">Feature importance weights from the XGBoost risk model showing the most influential safety telemetry signals.</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
 

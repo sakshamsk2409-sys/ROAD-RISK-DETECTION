@@ -59,7 +59,7 @@ def render_fullscreen_intro():
     if not video_path.exists():
         return
 
-    duration = 10.0
+    duration = 10.00
     try:
         cap = cv2.VideoCapture(str(video_path))
         fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
@@ -164,28 +164,46 @@ render_fullscreen_intro()
 st.markdown(
     """
 <style>
-/* ---------- Global ---------- */
+/* ---------- Global Theme: Cream & Forest Green ---------- */
+:root {
+    --bg-cream: #F7F4EB;
+    --bg-card: #FFFFFF;
+    --bg-sidebar: #EFECE2;
+    --border-cream: #D8D3C4;
+    --border-subtle: #E5E0D3;
+    --forest-deep: #132E22;
+    --forest-primary: #1B4332;
+    --forest-lush: #2D6A4F;
+    --forest-accent: #40916C;
+    --forest-mint: #52B788;
+    --forest-pale: #E7F0EB;
+    --text-primary: #192E24;
+    --text-secondary: #4E6558;
+    --text-muted: #6C7F74;
+}
+
 .stApp {
     background:
-        radial-gradient(circle at 85% 5%, rgba(37, 99, 235, 0.10), transparent 28%),
-        #07101c;
-    color: #e5edf7;
-    font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        radial-gradient(circle at 88% 8%, rgba(45, 106, 79, 0.07), transparent 32%),
+        radial-gradient(circle at 12% 92%, rgba(27, 67, 50, 0.05), transparent 28%),
+        #F7F4EB !important;
+    color: #192E24 !important;
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .block-container {
     max-width: 1600px;
-    padding-top: 1.1rem;
-    padding-bottom: 2rem;
+    padding-top: 1.2rem;
+    padding-bottom: 2.5rem;
 }
 
 [data-testid="stHeader"] {
-    background: transparent;
+    background: transparent !important;
 }
 
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #081321 0%, #060e18 100%);
-    border-right: 1px solid #17283b;
+    background: linear-gradient(180deg, #EFECE2 0%, #E8E4D7 100%) !important;
+    border-right: 1px solid #D8D3C4 !important;
 }
 
 [data-testid="stSidebar"] > div:first-child {
@@ -194,6 +212,7 @@ st.markdown(
 
 [data-testid="stSidebarContent"] {
     padding-top: 0.2rem !important;
+    color: #192E24 !important;
 }
 
 [data-testid="stSidebarUserContent"] {
@@ -206,12 +225,23 @@ st.markdown(
     height: auto !important;
 }
 
-/* ---------- Sidebar ---------- */
+/* Sidebar typography & elements */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label {
+    color: #192E24 !important;
+}
+
+/* ---------- Sidebar Brand & Status ---------- */
 .sidebar-brand {
-    padding: 2px 4px 16px 4px;
-    border-bottom: 1px solid #17283b;
+    padding: 6px 4px 16px 4px;
+    border-bottom: 1px solid #D8D3C4;
     margin-top: 0px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -223,29 +253,31 @@ st.markdown(
     height: auto;
     display: block;
     margin: 0 auto;
-    filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.45));
+    filter: drop-shadow(0 2px 8px rgba(27, 67, 50, 0.18));
     transition: transform 0.25s ease, filter 0.25s ease;
 }
 
 .sidebar-logo-img:hover {
     transform: scale(1.04);
-    filter: drop-shadow(0 0 24px rgba(56, 189, 248, 0.75));
+    filter: drop-shadow(0 4px 14px rgba(27, 67, 50, 0.30));
 }
 
 .sidebar-status {
     margin-top: 18px;
     padding: 14px;
-    border: 1px solid #1b3046;
+    border: 1px solid #D8D3C4;
     border-radius: 14px;
-    background: rgba(12, 26, 42, 0.8);
+    background: #E5E0D3;
+    box-shadow: 0 2px 8px rgba(27, 67, 50, 0.04);
 }
 
 .status-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    color: #b9c8d8;
+    color: #2D4539;
     font-size: 12px;
+    font-weight: 550;
     margin: 8px 0;
 }
 
@@ -254,12 +286,12 @@ st.markdown(
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 10px rgba(34,197,94,.7);
+    background: #2D6A4F;
+    box-shadow: 0 0 8px rgba(45, 106, 79, 0.6);
     margin-right: 7px;
 }
 
-/* ---------- Top header ---------- */
+/* ---------- Topbar ---------- */
 .topbar {
     display: flex;
     align-items: center;
@@ -278,18 +310,18 @@ st.markdown(
 }
 
 .brand-title {
-    color: #f8fbff;
+    color: #132E22;
     font-size: 25px;
     font-weight: 850;
     line-height: 1.05;
 }
 
 .brand-title span {
-    color: #2ea8ff;
+    color: #2D6A4F;
 }
 
 .brand-subtitle {
-    color: #7f92a8;
+    color: #5F7368;
     font-size: 12px;
     margin-top: 5px;
 }
@@ -298,35 +330,36 @@ st.markdown(
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid #213850;
-    background: #0c1928;
+    border: 1px solid #B7D5C4;
+    background: #E7F0EB;
     border-radius: 22px;
     padding: 9px 13px;
-    color: #cbd8e7;
+    color: #1B4332;
     font-size: 12px;
+    font-weight: 600;
 }
 
 .model-pill .dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 10px rgba(34,197,94,.75);
+    background: #2D6A4F;
+    box-shadow: 0 0 8px rgba(45, 106, 79, 0.6);
 }
 
-/* ---------- Hero ---------- */
+/* ---------- Hero: Deep Forest Green Statement Banner ---------- */
 .hero {
     position: relative;
     overflow: hidden;
-    min-height: 205px;
-    padding: 26px 32px;
-    border: 1px solid #1b3b59;
-    border-radius: 18px;
-    margin-bottom: 14px;
+    min-height: 200px;
+    padding: 28px 36px;
+    border: 1px solid #1B4332;
+    border-radius: 20px;
+    margin-bottom: 18px;
     background:
-        linear-gradient(90deg, rgba(5,14,25,.98) 0%, rgba(5,14,25,.90) 40%, rgba(5,14,25,.38) 100%),
-        linear-gradient(120deg, #0d2740 0%, #111827 45%, #3c2530 100%);
-    box-shadow: 0 12px 40px rgba(0,0,0,.28);
+        radial-gradient(circle at 90% 20%, rgba(82, 183, 136, 0.22), transparent 45%),
+        linear-gradient(135deg, #132E22 0%, #1B4332 45%, #2D6A4F 100%);
+    box-shadow: 0 12px 32px rgba(27, 67, 50, 0.20);
 }
 
 .hero:after {
@@ -336,8 +369,9 @@ st.markdown(
     top: -50%;
     width: 55%;
     height: 200%;
-    background: linear-gradient(120deg, transparent, rgba(48, 150, 255, .08), transparent);
+    background: linear-gradient(120deg, transparent, rgba(116, 198, 157, 0.12), transparent);
     transform: rotate(15deg);
+    pointer-events: none;
 }
 
 .hero-title {
@@ -345,22 +379,23 @@ st.markdown(
     z-index: 2;
     max-width: 720px;
     font-size: 34px;
-    line-height: 1.05;
+    line-height: 1.1;
     font-weight: 850;
-    color: #f8fbff;
+    color: #F7F4EB;
+    letter-spacing: -0.5px;
 }
 
 .hero-title span {
-    color: #3daeff;
+    color: #74C69D;
 }
 
 .hero-text {
     position: relative;
     z-index: 2;
     max-width: 760px;
-    color: #aab9ca;
+    color: #D3E2DA;
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 1.6;
     margin-top: 10px;
 }
 
@@ -368,115 +403,137 @@ st.markdown(
     position: relative;
     z-index: 2;
     display: flex;
-    gap: 26px;
-    margin-top: 19px;
+    gap: 24px;
+    margin-top: 20px;
     flex-wrap: wrap;
 }
 
 .capability {
-    color: #b9c8d8;
+    color: #C1D7CC;
     font-size: 12px;
 }
 
 .capability strong {
     display: block;
-    color: #eaf2fb;
+    color: #F7F4EB;
     margin-bottom: 2px;
+    font-size: 13px;
 }
 
 /* ---------- Cards ---------- */
 .card {
-    background: linear-gradient(180deg, #0d1a29 0%, #0a1624 100%);
-    border: 1px solid #1b3046;
-    border-radius: 14px;
-    padding: 15px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    background: #FFFFFF;
+    border: 1px solid #D8D3C4;
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 16px rgba(27, 67, 50, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+    border-color: #2D6A4F;
+    box-shadow: 0 6px 20px rgba(27, 67, 50, 0.09);
 }
 
 .card-title {
-    color: #edf4fb;
+    color: #132E22;
     font-size: 15px;
-    font-weight: 750;
+    font-weight: 800;
     margin-bottom: 10px;
+    letter-spacing: -0.2px;
 }
 
 .card-muted {
-    color: #70839a;
-    font-size: 11px;
+    color: #5F7368;
+    font-size: 11.5px;
+    line-height: 1.5;
 }
 
 .metric-card {
-    min-height: 90px;
-    background: linear-gradient(180deg, #0d1a29 0%, #0a1624 100%);
-    border: 1px solid #1b3046;
-    border-radius: 13px;
-    padding: 13px 15px;
+    min-height: 92px;
+    background: #FFFFFF;
+    border: 1px solid #D8D3C4;
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 3px 12px rgba(27, 67, 50, 0.05);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.metric-card:hover {
+    border-color: #2D6A4F;
+    transform: translateY(-1px);
 }
 
 .metric-label {
-    color: #8193a8;
+    color: #4E6558;
     font-size: 11px;
-    margin-bottom: 7px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
 }
 
 .metric-value {
-    color: #f5f9fd;
-    font-size: 23px;
-    font-weight: 800;
+    color: #192E24;
+    font-size: 24px;
+    font-weight: 850;
+    line-height: 1.1;
 }
 
 .metric-detail {
-    color: #71859b;
-    font-size: 10px;
-    margin-top: 3px;
+    color: #6C7F74;
+    font-size: 10.5px;
+    margin-top: 4px;
 }
 
 .metric-accent {
-    color: #35d6ff;
-}
-
-.metric-warning {
-    color: #fbbf24;
-}
-
-.metric-danger {
-    color: #fb7185;
+    color: #1B4332 !important;
 }
 
 .metric-safe {
-    color: #4ade80;
+    color: #2D6A4F !important;
+}
+
+.metric-warning {
+    color: #B45309 !important;
+}
+
+.metric-danger {
+    color: #B91C1C !important;
 }
 
 /* ---------- Video panels ---------- */
 .video-card {
-    background: #081321;
-    border: 1px solid #1b3046;
-    border-radius: 15px;
-    padding: 12px;
+    background: #FFFFFF;
+    border: 1px solid #D8D3C4;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(27, 67, 50, 0.05);
 }
 
 .video-heading {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #eef5fc;
+    color: #132E22;
     font-size: 15px;
-    font-weight: 750;
+    font-weight: 800;
     margin: 0 2px 10px;
 }
 
 .live-pill {
-    color: #59e6a8;
-    background: rgba(34,197,94,.09);
-    border: 1px solid rgba(34,197,94,.24);
-    padding: 4px 8px;
+    color: #1B4332;
+    background: #E7F0EB;
+    border: 1px solid #A3C9B4;
+    padding: 4px 9px;
     border-radius: 12px;
     font-size: 10px;
+    font-weight: 700;
 }
 
 .video-caption {
-    color: #6f8298;
-    font-size: 10px;
+    color: #5F7368;
+    font-size: 10.5px;
     margin-top: 7px;
 }
 
@@ -493,10 +550,10 @@ st.markdown(
     border-radius: 170px 170px 0 0;
     background: conic-gradient(
         from 270deg,
-        #22c55e 0deg 90deg,
-        #f59e0b 90deg 135deg,
-        #ef4444 135deg 180deg,
-        #17283b 180deg 180deg
+        #2D6A4F 0deg 90deg,
+        #D97706 90deg 135deg,
+        #DC2626 135deg 180deg,
+        #E2DDCF 180deg 180deg
     );
     position: relative;
     overflow: hidden;
@@ -508,27 +565,30 @@ st.markdown(
     right: 17px;
     bottom: 0;
     height: 68px;
-    background: #0a1624;
+    background: #FFFFFF;
     border-radius: 150px 150px 0 0;
-    padding-top: 22px;
+    padding-top: 20px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.04);
 }
 
 .gauge-value {
-    color: #f8fbff;
+    color: #192E24;
     font-size: 27px;
     font-weight: 850;
 }
 
 .gauge-label {
-    color: #8193a8;
+    color: #5F7368;
     font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.5px;
 }
 
 .risk-level {
     text-align: center;
     font-weight: 800;
     font-size: 13px;
-    margin-top: 5px;
+    margin-top: 6px;
 }
 
 /* ---------- Object inventory ---------- */
@@ -536,18 +596,23 @@ st.markdown(
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #0b1929;
-    border: 1px solid #152b40;
-    border-radius: 9px;
-    padding: 8px 10px;
+    background: #FBF9F4;
+    border: 1px solid #E5E0D3;
+    border-radius: 10px;
+    padding: 9px 12px;
     margin-bottom: 6px;
-    color: #b9c7d7;
-    font-size: 11px;
+    color: #2D4539;
+    font-size: 11.5px;
+    font-weight: 550;
 }
 
 .object-count {
-    color: #f2f7fc;
-    font-weight: 800;
+    color: #132E22;
+    font-weight: 850;
+    background: #E7F0EB;
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 1px solid #C1D7CC;
 }
 
 /* ---------- Alerts ---------- */
@@ -556,10 +621,11 @@ st.markdown(
     grid-template-columns: 70px 80px 1fr 70px;
     gap: 8px;
     align-items: center;
-    border-bottom: 1px solid #172a3d;
-    padding: 9px 0;
-    color: #aebdcd;
-    font-size: 10px;
+    border-bottom: 1px solid #E8E3D7;
+    padding: 10px 0;
+    color: #2D4539;
+    font-size: 10.5px;
+    font-weight: 550;
 }
 
 .alert-row:last-child {
@@ -569,25 +635,28 @@ st.markdown(
 .alert-tag {
     display: inline-block;
     width: fit-content;
-    padding: 3px 7px;
+    padding: 3px 8px;
     border-radius: 8px;
-    font-size: 9px;
+    font-size: 9.5px;
     font-weight: 750;
 }
 
 .tag-low {
-    color: #5ee7a1;
-    background: rgba(34,197,94,.12);
+    color: #1B4332;
+    background: #E7F0EB;
+    border: 1px solid #B7D5C4;
 }
 
 .tag-medium {
-    color: #fbbf24;
-    background: rgba(245,158,11,.12);
+    color: #92400E;
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
 }
 
 .tag-critical {
-    color: #fb7185;
-    background: rgba(239,68,68,.12);
+    color: #991B1B;
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
 }
 
 /* ---------- Trend ---------- */
@@ -596,56 +665,136 @@ st.markdown(
     display: flex;
     align-items: flex-end;
     gap: 3px;
-    padding: 8px 3px;
-    border-radius: 10px;
+    padding: 8px 4px;
+    border-radius: 12px;
     background:
-        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px),
-        #091625;
+        linear-gradient(rgba(45, 106, 79, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45, 106, 79, 0.03) 1px, transparent 1px),
+        #FBF9F4;
     background-size: 100% 25%, 10% 100%, auto;
+    border: 1px solid #E5E0D3;
 }
 
 .trend-column {
     flex: 1;
     min-width: 2px;
-    background: linear-gradient(180deg, #39bdf8, #6d5dfc);
+    background: linear-gradient(180deg, #52B788, #1B4332);
     border-radius: 3px 3px 0 0;
-    opacity: .9;
+    opacity: .95;
+    transition: opacity 0.2s ease;
 }
 
-/* ---------- Info / buttons ---------- */
+.trend-column:hover {
+    opacity: 1;
+    filter: brightness(1.1);
+}
+
+/* ---------- Buttons & Interactive ---------- */
 .section-gap {
     margin-top: 14px;
 }
 
 div.stButton > button {
-    border-radius: 9px;
-    border: 1px solid #27425e;
-    background: #102238;
-    color: #dce9f6;
-    font-weight: 650;
+    border-radius: 10px;
+    border: 1.5px solid #2D6A4F !important;
+    background: #FBF9F4 !important;
+    color: #1B4332 !important;
+    font-weight: 700 !important;
+    padding: 0.5rem 1rem !important;
+    box-shadow: 0 2px 6px rgba(27, 67, 50, 0.08) !important;
+    transition: all 0.2s ease !important;
 }
 
 div.stButton > button:hover {
-    border-color: #38bdf8;
-    color: #ffffff;
+    border-color: #1B4332 !important;
+    background: #EFECE2 !important;
+    color: #132E22 !important;
+    box-shadow: 0 4px 12px rgba(27, 67, 50, 0.15) !important;
+    transform: translateY(-1px);
 }
 
-button[kind="primary"] {
-    background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
-    border: 0 !important;
-    color: white !important;
+button[kind="primary"],
+div.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%) !important;
+    border: 1px solid #132E22 !important;
+    color: #F7F4EB !important;
+    box-shadow: 0 4px 14px rgba(27, 67, 50, 0.25) !important;
 }
 
-/* Make Streamlit dataframes/cards blend into dashboard */
+button[kind="primary"]:hover,
+div.stButton > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #2D6A4F 0%, #40916C 100%) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 6px 18px rgba(27, 67, 50, 0.35) !important;
+    transform: translateY(-1px);
+}
+
+/* Streamlit widgets: Radio, File Uploader, Selectbox, Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #132E22 !important;
+    font-weight: 800 !important;
+}
+
+p, span, label {
+    color: #192E24;
+}
+
+.stCaption, [data-testid="stCaptionContainer"] {
+    color: #5F7368 !important;
+}
+
+/* File Uploader styling */
+[data-testid="stFileUploader"] {
+    background: #FFFFFF;
+    border: 1.5px dashed #B7D5C4;
+    border-radius: 12px;
+    padding: 10px;
+    transition: border-color 0.2s ease;
+}
+
+[data-testid="stFileUploader"]:hover {
+    border-color: #2D6A4F;
+}
+
+[data-testid="stFileUploader"] section {
+    background: #FAF8F2 !important;
+}
+
+/* Radio buttons in sidebar */
+[data-testid="stRadio"] label {
+    color: #192E24 !important;
+    font-weight: 600;
+}
+
+/* Selectbox styling */
+[data-testid="stSelectbox"] > div {
+    background: #FFFFFF !important;
+    border-color: #D8D3C4 !important;
+}
+
+/* Progress bar */
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #1B4332, #52B788) !important;
+}
+
+/* Dataframe & separators */
 [data-testid="stDataFrame"] {
-    border: 1px solid #1b3046;
+    border: 1px solid #D8D3C4;
     border-radius: 12px;
     overflow: hidden;
 }
 
 hr {
-    border-color: #172a3d;
+    border-color: #D8D3C4 !important;
+    opacity: 0.8;
+}
+
+/* Streamlit alerts / success / info */
+div[data-testid="stAlert"] {
+    border-radius: 12px;
+    border: 1px solid #C1D7CC;
+    background: #EBF4F0;
+    color: #1B4332;
 }
 
 /* Hide default Streamlit decoration */
@@ -801,11 +950,11 @@ def render_risk_gauge(score, level):
     # CSS gauge is intentionally a visual dashboard representation.
     angle = int(180 * score / 100)
     if level == "CRITICAL":
-        value_color = "#fb7185"
+        value_color = "#B91C1C"
     elif level == "MEDIUM":
-        value_color = "#fbbf24"
+        value_color = "#B45309"
     else:
-        value_color = "#4ade80"
+        value_color = "#1B4332"
 
     st.markdown(
         f"""
@@ -813,10 +962,10 @@ def render_risk_gauge(score, level):
             <div class="gauge"
                  style="background: conic-gradient(
                     from 270deg,
-                    #22c55e 0deg 75deg,
-                    #f59e0b 75deg 130deg,
-                    #ef4444 130deg {max(130, angle)}deg,
-                    #17283b {max(130, angle)}deg 180deg
+                    #2D6A4F 0deg 75deg,
+                    #D97706 75deg 130deg,
+                    #DC2626 130deg {max(130, angle)}deg,
+                    #E2DDCF {max(130, angle)}deg 180deg
                  );">
                 <div class="gauge-inner">
                     <div class="gauge-value">{score:.0f}</div>
@@ -861,6 +1010,7 @@ def render_trend(stats):
 
 def load_logo_base64():
     logo_candidates = [
+        PROJECT_ROOT / "assets" / "logo_forest.png",
         PROJECT_ROOT / "assets" / "logo.png",
         PROJECT_ROOT / "assets" / "logo_cyan.png",
         PROJECT_ROOT / "assets" / "logo_white.png",
@@ -880,7 +1030,7 @@ if _logo_b64:
     st.sidebar.markdown(
         f"""
         <div class="sidebar-brand">
-            <img class="sidebar-logo-img" src="data:image/png;base64,{_logo_b64}" alt="ADAS Logo" />
+            <img class="sidebar-logo-img" src="data:image/png;base64,{_logo_b64}" alt="RRD Logo" />
         </div>
         """,
         unsafe_allow_html=True,
@@ -889,7 +1039,7 @@ else:
     st.sidebar.markdown(
         """
         <div class="sidebar-brand">
-            <div style="font-size: 22px; font-weight: 800; color: #38bdf8; text-align: center; letter-spacing: 2px;">ADAS</div>
+            <div style="font-size: 22px; font-weight: 800; color: #1B4332; text-align: center; letter-spacing: 2px;">RRD</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1064,10 +1214,6 @@ elif "Model" in navigation:
     st.markdown("## 📊 Model Info & Performance Analytics")
     st.caption("Evaluation metrics, pipeline architecture, and multi-model benchmark results.")
 
-    evaluator = ModelEvaluator()
-    comp_df = evaluator.get_comparison_table()
-    report_df = evaluator.get_classification_report_df()
-
     # 1. Executive Performance Metrics Row
     m1, m2, m3 = st.columns(3)
     with m1:
@@ -1087,7 +1233,7 @@ elif "Model" in navigation:
             """
             <div class="card" style="height: 100%;">
                 <div class="card-title">🎯 Object Detection Model</div>
-                <div style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 6px;">YOLO11 Nano (yolo11n.pt)</div>
+                <div style="font-size: 13px; color: #1B4332; font-weight: 750; margin-bottom: 6px;">YOLO11 Nano (yolo11n.pt)</div>
                 <div class="card-muted" style="line-height: 1.6;">
                     • <b>Task:</b> Multi-class road object perception<br>
                     • <b>Classes:</b> Vehicles, Pedestrians, Two-Wheelers, Obstacles<br>
@@ -1103,7 +1249,7 @@ elif "Model" in navigation:
             """
             <div class="card" style="height: 100%;">
                 <div class="card-title">🔵 Multi-Object Tracker</div>
-                <div style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 6px;">ByteTrack Algorithm</div>
+                <div style="font-size: 13px; color: #1B4332; font-weight: 750; margin-bottom: 6px;">ByteTrack Algorithm</div>
                 <div class="card-muted" style="line-height: 1.6;">
                     • <b>Task:</b> Persistent object trajectory tracking<br>
                     • <b>Algorithm:</b> Kalman Filter + Low-score Association<br>
@@ -1119,7 +1265,7 @@ elif "Model" in navigation:
             """
             <div class="card" style="height: 100%;">
                 <div class="card-title">⚠️ Risk Prediction Engine</div>
-                <div style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 6px;">XGBoost Multiclass Classifier</div>
+                <div style="font-size: 13px; color: #1B4332; font-weight: 750; margin-bottom: 6px;">XGBoost Multiclass Classifier</div>
                 <div class="card-muted" style="line-height: 1.6;">
                     • <b>Input Features:</b> 14 Telemetry Vectors (TTC, Distance, Velocity)<br>
                     • <b>Outputs:</b> LOW, MEDIUM, CRITICAL Risk probabilities<br>
@@ -1131,31 +1277,6 @@ elif "Model" in navigation:
             unsafe_allow_html=True,
         )
 
-    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-
-    # 4. Multi-Model Comparison & Classification Breakdown
-    t1, t2 = st.columns([3, 2])
-
-    with t1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">🏆 Model Benchmark Comparison</div>', unsafe_allow_html=True)
-        if not comp_df.empty:
-            st.dataframe(comp_df, use_container_width=True, hide_index=True)
-        else:
-            st.info("Model comparison benchmark table not available.")
-        st.caption("Benchmark comparison across 3 distinct machine learning architectures evaluated on the same driving dataset.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with t2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">📋 Class-Wise Report (XGBoost)</div>', unsafe_allow_html=True)
-        if not report_df.empty:
-            st.dataframe(report_df, use_container_width=True, hide_index=True)
-        else:
-            st.info("Classification report not available.")
-        st.caption("Detailed precision, recall, and F1-score for each safety category.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
 
 # ---------------------------------------------------------------------------
 # FOOTER
@@ -1165,11 +1286,11 @@ st.markdown(
     """
     <div style="
         text-align:center;
-        color:#52677e;
-        font-size:10px;
+        color:#5F7368;
+        font-size:11px;
         margin-top:30px;
         padding-top:14px;
-        border-top:1px solid #15283b;">
+        border-top:1px solid #D8D3C4;">
         AI Driving Risk Detection & Driver Assistance System • Advisory ADAS prototype
     </div>
     """,

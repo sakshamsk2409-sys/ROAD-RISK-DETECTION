@@ -311,21 +311,7 @@ class VideoProcessor:
         cv2.putText(frame, time_str, (w - 150, 26),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 180), 1, cv2.LINE_AA)
 
-        # 4. Critical / Caution Advisory Banner
-        if active_warning:
-            warn_bg = (20, 20, 180) if frame_risk == "CRITICAL" else (0, 140, 220)
-            banner_h = 36
-            banner_y = bar_h + 10
-            banner_w = min(w - 40, max(380, int(len(active_warning) * 9.5)))
-            bx1 = (w - banner_w) // 2
-            bx2 = bx1 + banner_w
-
-            # Glowing rounded warning alert
-            cv2.rectangle(frame, (bx1, banner_y), (bx2, banner_y + banner_h), warn_bg, -1)
-            cv2.rectangle(frame, (bx1, banner_y), (bx2, banner_y + banner_h), (255, 255, 255), 2)
-            cv2.putText(frame, f"⚠  {active_warning}", (bx1 + 16, banner_y + 24),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.50, (255, 255, 255), 2, cv2.LINE_AA)
-
+        # 4. Critical / Caution Advisory Banner (Removed per user request)
         return frame
 
     def _draw_corner_rect(self, img, bbox, color, thickness=2, corner_len=14):

@@ -101,10 +101,10 @@ class LaneZoneAnalyzer:
             # 1. Blind-Spot Monitoring
             if zone == "left_blind_spot":
                 warning_severity = "CRITICAL" if dist_m < 8.0 else "MEDIUM"
-                warning_msg = f"{cls_name} IN LEFT BLIND SPOT — DO NOT CHANGE LANE"
+                warning_msg = f"{cls_name} IN LEFT BLIND SPOT - DO NOT CHANGE LANE"
             elif zone == "right_blind_spot":
                 warning_severity = "CRITICAL" if dist_m < 8.0 else "MEDIUM"
-                warning_msg = f"{cls_name} IN RIGHT BLIND SPOT — DO NOT CHANGE LANE"
+                warning_msg = f"{cls_name} IN RIGHT BLIND SPOT - DO NOT CHANGE LANE"
 
             # 2. Aggressive Cut-in Detection
             # Left lane moving right towards ego lane
@@ -112,34 +112,34 @@ class LaneZoneAnalyzer:
                 is_cutting_in = True
                 if dist_m < 15.0 or (ttc is not None and ttc < 3.5):
                     warning_severity = "CRITICAL"
-                    warning_msg = f"{cls_name} CUT-IN RISK FROM LEFT — MAINTAIN DISTANCE"
+                    warning_msg = f"{cls_name} CUT-IN RISK FROM LEFT - MAINTAIN DISTANCE"
                 else:
                     warning_severity = "MEDIUM"
-                    warning_msg = f"{cls_name} APPROACHING FROM LEFT — SLOW DOWN"
+                    warning_msg = f"{cls_name} APPROACHING FROM LEFT - SLOW DOWN"
 
             # Right lane moving left towards ego lane
             elif zone == "right_lane" and lateral_velocity < -0.06:
                 is_cutting_in = True
                 if dist_m < 15.0 or (ttc is not None and ttc < 3.5):
                     warning_severity = "CRITICAL"
-                    warning_msg = f"{cls_name} CUT-IN RISK FROM RIGHT — MAINTAIN DISTANCE"
+                    warning_msg = f"{cls_name} CUT-IN RISK FROM RIGHT - MAINTAIN DISTANCE"
                 else:
                     warning_severity = "MEDIUM"
-                    warning_msg = f"{cls_name} APPROACHING FROM RIGHT — SLOW DOWN"
+                    warning_msg = f"{cls_name} APPROACHING FROM RIGHT - SLOW DOWN"
 
             # 3. Direct Ego Lane Lead Vehicle Analysis
             elif zone == "ego_lane":
                 if rel_velocity < -1.5 and dist_m < 18.0:
                     warning_severity = "CRITICAL" if dist_m < 10.0 or (ttc and ttc < 2.5) else "MEDIUM"
-                    warning_msg = f"{cls_name} AHEAD CLOSING RAPIDLY — BRAKE / SLOW DOWN"
+                    warning_msg = f"{cls_name} AHEAD CLOSING RAPIDLY - BRAKE / SLOW DOWN"
                 elif dist_m < 7.0:
                     warning_severity = "CRITICAL"
-                    warning_msg = f"TOO CLOSE TO {cls_name} AHEAD — MAINTAIN SAFE GAP"
+                    warning_msg = f"TOO CLOSE TO {cls_name} AHEAD - MAINTAIN SAFE GAP"
 
             # 4. Fast Approaching Object in General
             elif rel_velocity < -3.5 and dist_m < 20.0:
                 warning_severity = "MEDIUM"
-                warning_msg = f"{cls_name} APPROACHING RAPIDLY — CAUTION"
+                warning_msg = f"{cls_name} APPROACHING RAPIDLY - CAUTION"
 
             obj_copy["is_cutting_in"] = is_cutting_in
             obj_copy["spatial_warning"] = warning_msg

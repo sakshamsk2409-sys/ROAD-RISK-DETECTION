@@ -945,6 +945,18 @@ start_analysis = st.sidebar.button(
     use_container_width=True,
 )
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Live Device Camera**")
+if st.sidebar.button(
+    "📷 LAUNCH LIVE CAMERA",
+    use_container_width=True,
+    help="Opens a real-time live camera window with dynamic camera switching. Press 'C' to switch camera, 'Q' to exit.",
+):
+    import subprocess
+    subprocess.Popen([sys.executable, str(PROJECT_ROOT / "live_camera" / "live_detector.py")])
+    st.sidebar.success("Live Camera Window Opened! (Press 'C' to switch camera, 'Q' to exit)")
+
+
 
 
 

@@ -88,7 +88,13 @@ class MonocularDistanceEstimator:
         return float(round(fused_distance, 1))
 
     def estimate_batch(
-        self, detections: List[Dict[str, Any]], frame_shape: Tuple[int, int]
+        self, arg1: Any, arg2: Any
     ) -> List[float]:
         """Estimate distance in meters for all detections in a frame."""
-        return [self.estimate_distance(det, frame_shape) for det in detections]
+        # Support both (detections, frame_shape) and (frame_shape, detections)
+        if isinstance(arg1, (tuple, list)) and len(arg1) in (2, 3) and (not arg1 or isinstance(arg1[0], int)):
+            frame_shape, detections = arg1, arg2
+        else:
+            detections, frame_shape = arg1, arg2
+
+        return [self.estimate_distance(det, frame_shape) for det in (detections or [])]

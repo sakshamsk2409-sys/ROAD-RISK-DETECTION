@@ -2,8 +2,6 @@
   AI DRIVING RISK DETECTION & DRIVER ASSISTANCE SYSTEM (ADAS)
   PROJECT CONTEXT -- Full Technical Reference
 ================================================================================
-
-LAST UPDATED : 2026-10-05
 REPOSITORY   : https://github.com/sakshamsk2409-sys/ROAD-RISK-DETECTION
 ENTRY POINT  : app.py  (Streamlit web dashboard)
 LANGUAGE     : Python 3.10+
@@ -64,39 +62,9 @@ YOLO MODEL USED: yolo11n.pt  (YOLO11 Nano -- fastest variant, best for CPU)
   - Used for both detection-only and tracking (ByteTrack integrated).
   - Inference resolution: configurable (original / 720p / 480p) from UI.
 
---------------------------------------------------------------------------------
-3. PROJECT DIRECTORY STRUCTURE
---------------------------------------------------------------------------------
-
-ROAD-RISK-DETECTION/
-  app.py                          Main Streamlit dashboard (entry point)
-  yolo11n.pt                      Pretrained YOLO11 Nano weights
-  requirements.txt                Python dependencies
-  context.txt                     THIS FILE -- project reference document
-  config/
-    config.py                     All global constants and thresholds
-  src/
-    perception/
-      detector.py                 YOLO detection + rider disambiguation filter
-      tracker.py                  ByteTrack multi-object tracking + temporal state
-      depth_estimator.py          Monocular metric distance estimation
-      lane_detector.py            Lane zones, blind-spot & cut-in analysis
-    risk_engine/
-      feature_extractor.py        Feature vector builder for ML classifier
-      classifier.py               Hybrid ML + rule-based risk evaluator
-      train_risk_model.py         ML training pipeline (offline, run once)
-    pipeline/
-      video_processor.py          Main frame-by-frame processing + HUD rendering
-      sample_data.py              Synthetic dashcam video generator
-    evaluation/
-      evaluator.py                Model performance reports & visualizations
-  data/
-    sample_videos/                Preloaded and uploaded driving clips
-    models/                       Saved ML model artifacts (.joblib, .json)
-    training_data/                Synthesized training CSV dataset
 
 --------------------------------------------------------------------------------
-4. CONFIGURATION -- config/config.py
+3. CONFIGURATION -- config/config.py
 --------------------------------------------------------------------------------
 
 This file is the single source of truth for all tunable parameters.

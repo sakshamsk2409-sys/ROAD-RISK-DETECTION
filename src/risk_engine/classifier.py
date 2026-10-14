@@ -95,7 +95,7 @@ class DrivingRiskClassifier:
         # Rule A: Time to Collision threshold
         if ttc is not None and ttc < TTC_CRITICAL and (zone == "ego_lane" or is_cutting_in):
             final_risk = "CRITICAL"
-            critical_reason = f"IMMINENT COLLISION RISK — TTC {ttc:.1f}s"
+            critical_reason = f"IMMINENT COLLISION RISK - TTC {ttc:.1f}s"
         elif ttc is not None and ttc < TTC_CAUTION and (zone == "ego_lane" or is_cutting_in):
             if final_risk == "LOW":
                 final_risk = "MEDIUM"
@@ -104,7 +104,7 @@ class DrivingRiskClassifier:
         if zone == "ego_lane":
             if dist_m < DISTANCE_CRITICAL:
                 final_risk = "CRITICAL"
-                critical_reason = f"EXTREMELY CLOSE ({dist_m:.1f} m) — BRAKE"
+                critical_reason = f"EXTREMELY CLOSE ({dist_m:.1f} m) - BRAKE"
             elif dist_m < DISTANCE_CAUTION:
                 if final_risk == "LOW":
                     final_risk = "MEDIUM"
@@ -113,10 +113,10 @@ class DrivingRiskClassifier:
         display_cls = "ROADSIDE ENTITY" if cls_name in ["pedestrian", "animal", "person"] else cls_name.upper()
         if "blind_spot" in zone and dist_m < 8.0:
             final_risk = "CRITICAL"
-            critical_reason = f"{display_cls} IN BLIND SPOT — DO NOT CHANGE LANE"
+            critical_reason = f"{display_cls} IN BLIND SPOT - DO NOT CHANGE LANE"
         elif is_cutting_in and dist_m < 14.0:
             final_risk = "CRITICAL"
-            critical_reason = f"{display_cls} CUT-IN HAZARD — MAINTAIN DISTANCE"
+            critical_reason = f"{display_cls} CUT-IN HAZARD - MAINTAIN DISTANCE"
 
         # Rule D: Distant objects (>30m) receding or stable are safely LOW
         if dist_m > 30.0 and rel_vel >= -0.5:

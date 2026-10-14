@@ -10,16 +10,14 @@ DATA_DIR = BASE_DIR / "data"
 SAMPLE_VIDEOS_DIR = DATA_DIR / "sample_videos"
 MODELS_DIR = DATA_DIR / "models"
 TRAINING_DATA_DIR = DATA_DIR / "training_data"
-# Create directories if they do not exist
+
 for directory in [SAMPLE_VIDEOS_DIR, MODELS_DIR, TRAINING_DATA_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
-# YOLO Object Detection Settings
-YOLO_MODEL_NAME = "yolo11n.pt"  # Latest Ultralytics YOLO11 nano model for fast CPU/GPU inference
+
+YOLO_MODEL_NAME = "yolo11n.pt" 
 CONFIDENCE_THRESHOLD = 0.35
-IOU_THRESHOLD = 0.45
-# Target COCO Classes for Road Perception
-# 0: person, 1: bicycle, 2: car, 3: motorcycle, 5: bus, 7: truck
-# 15: cat, 16: dog, 17: horse, 18: sheep, 19: cow
+IOU_THRESHOLD = 0.45    #Higher IoU means the predicted box fits the object more accurately.
+
 ROAD_CLASSES = {
     0: "pedestrian",
     1: "bicycle",
@@ -45,7 +43,7 @@ OBJECT_TYPICAL_HEIGHTS = {
     "animal": 1.00,
 }
 
-# Camera Geometric Parameters (Typical Dashcam Calibration)
+#Dashcam
 CAMERA_MOUNT_HEIGHT = 1.35  # meters above road surface
 CAMERA_PITCH_ANGLE = 0.0    # radians (assuming level horizon)
 CAMERA_FOV_V = 45.0         # vertical field of view in degrees
